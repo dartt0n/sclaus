@@ -76,9 +76,11 @@
     5. https://github.com/profunktor/redis4cats - клиент для Redis, можете использовать в качестве кэша
     6. https://fs2.io/#/getstarted/install - функциональный стриминг данных
     7. https://fd4s.github.io/fs2-kafka/ - клиент для Apache Kafka, реализованный через fs2 стримы
-1. ZIO 
+2. ZIO 
     1. https://zio.dev/ecosystem/ - список официальных и не только либ
     2. https://zio.dev/zio2-interop-cats3/ - если нужно связать библиотеки Typelevel стека с ZIO
-3. https://circe.github.io/circe/ - для парсинга JSON
+3. Для парсинга JSON
+    1. https://circe.github.io/circe
+    2. https://github.com/tethys-json/tethys
 4. https://github.com/apimorphism/telegramium - библиотека написания ботов для Telegram
 5. https://github.com/bot4s/telegram - еще одна библиотека для написания ботов для Telegram
