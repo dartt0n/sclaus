@@ -1,5 +1,7 @@
 import Dependencies._
-import sbt.Keys.libraryDependencies
+
+val projectVersion = "0.0.0"
+val projectName    = "sclaus"
 
 Compile / scalacOptions ++= Seq(
   "-Xkind-projector:underscores",
@@ -16,11 +18,19 @@ Compile / scalacOptions ++= Seq(
   "-language:implicitConversions"
 )
 
-lazy val root = project
+lazy val app = project
   .in(file("."))
   .settings(
-    name         := "sclaus",
-    version      := "0.0.0",
+    name         := projectName,
+    version      := projectVersion,
     scalaVersion := "3.5.2",
-    libraryDependencies ++= Dependencies.all
+    libraryDependencies ++= Dependencies.all,
+    assembly / mainClass          := Some("com.dartt0n.sclaus.Main"),
+    assembly / assemblyOutputPath := file("target/assembly/sclaus.jar")
   )
+
+enablePlugins(DockerPlugin)
+enablePlugins(JavaAppPackaging)
+
+dockerBaseImage    := "openjdk:11-jre-slim-buster"
+dockerExposedPorts := Seq(8080)

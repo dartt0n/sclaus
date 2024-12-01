@@ -1,7 +1,22 @@
-noop-job:
+image: sbtscala/scala-sbt:eclipse-temurin-jammy-21.0.2_13_1.10.4_2.13.15
+
+stages:
+  - compile
+  - test
+  - docker
+
+variables:
+  SBT_OPTS: "-Xmx1G"
+
+before_script:
+  - sbt clean update
+
+compile:
+  stage: compile
   script:
-    - echo ok
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: never
-    - when: always
+    - sbt "scalafmtCheckAll; compile"
+
+test:
+  stage: test
+  script:
+    - sbt test
