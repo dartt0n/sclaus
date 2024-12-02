@@ -1,12 +1,13 @@
 package com.dartt0n.sclaus
 
-import zio.*
-import zio.Console.*
+import cats.effect.{IO, IOApp}
+import cats.effect.ExitCode
 
-object Main extends ZIOAppDefault {
+object Main extends IOApp {
 
-  def run: Task[Unit] = for {
-    _ <- printLine("Ho, ho ho! Merry Christmas 🎅!")
-  } yield ()
+  def run(args: List[String]) =
+    for {
+      _ <- IO.println("Ho, ho ho! Merry Chri!stmas 🎅!")
+    } yield ExitCode.Success
 
 }

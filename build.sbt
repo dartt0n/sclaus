@@ -15,7 +15,9 @@ Compile / scalacOptions ++= Seq(
   "utf-8",
   "-explaintypes",
   "-feature",
-  "-language:implicitConversions"
+  "-language:implicitConversions",
+  "-Wnonunit-statement",
+  "-source:future"
 )
 
 lazy val app = project
@@ -29,8 +31,4 @@ lazy val app = project
     assembly / assemblyOutputPath := file("target/assembly/sclaus.jar")
   )
 
-enablePlugins(DockerPlugin)
 enablePlugins(JavaAppPackaging)
-
-dockerBaseImage    := "openjdk:11-jre-slim-buster"
-dockerExposedPorts := Seq(8080)
