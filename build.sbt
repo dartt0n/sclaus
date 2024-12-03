@@ -17,7 +17,6 @@ Compile / scalacOptions ++= Seq(
   "-feature",
   "-language:implicitConversions",
   "-Wnonunit-statement",
-  "-source:future"
 )
 
 lazy val app = project
@@ -28,7 +27,7 @@ lazy val app = project
     scalaVersion := "3.5.2",
     libraryDependencies ++= Dependencies.all,
     assembly / mainClass          := Some("com.dartt0n.sclaus.Main"),
-    assembly / assemblyOutputPath := file("target/assembly/sclaus.jar")
+    assembly / assemblyOutputPath := file("target/assembly/sclaus.jar"),
   )
 
 enablePlugins(JavaAppPackaging)
