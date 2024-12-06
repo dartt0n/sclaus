@@ -1,60 +1,82 @@
 package com.dartt0n.sclaus.repository.user
 
 import com.dartt0n.sclaus.domain.Language
+import com.dartt0n.sclaus.domain.languages._
 import doobie.util.meta.Meta
 import doobie.postgres.implicits._
-
-/** mapping from domain Language enum to postgres-compatible Enum */
-sealed trait PsqlLanguageEnum
-
-object PsqlLanguageEnum {
-
-  /** russian language */
-  case object RUS extends PsqlLanguageEnum
-
-  /** english language */
-  case object ENG extends PsqlLanguageEnum
-
-  /** convert postgers-compatible enum value to scala string
-    *
-    * @param language
-    *   \- postgres enum value
-    * @return
-    *   \- language code in ISO-639-3 format
-    */
-  def toEnum(language: PsqlLanguageEnum): String = language match {
-    case RUS => "RUS"
-    case ENG => "ENG"
-  }
-
-  /** convert from scala string to postgres-compatible enum value
-    *
-    * @param languageCode
-    *   \- language code in ISO-639-3 format
-    * @return
-    *   \- postgres enum value
-    */
-  def fromEnum(languageCode: String): Option[PsqlLanguageEnum] = languageCode match {
-    case "RUS" => Some(RUS)
-    case "ENG" => Some(ENG)
-    case _     => None
-  }
-
-  /** implicit conversion from domain Language to postgres-compatible PsqlLanguageEnum */
-  given Conversion[Language, PsqlLanguageEnum] with {
-
-    def apply(x: Language): PsqlLanguageEnum = x match {
-      case Language.RUS => RUS
-      case Language.ENG => ENG
-    }
-
-  }
-
-  /** postgres metadata from doobie to work with enum */
-  given Meta[PsqlLanguageEnum] = pgEnumStringOpt("languages", PsqlLanguageEnum.fromEnum, PsqlLanguageEnum.toEnum)
-
-}
+import com.dartt0n.sclaus.domain.CreateUser
+import doobie.util.query.Query0
+import com.dartt0n.sclaus.domain.User
+import org.joda.time.DateTime
+import doobie._
+import doobie.implicits._
+import doobie.implicits.javasql._
+import com.dartt0n.sclaus.domain.UserID
+import com.dartt0n.sclaus.domain.UpdateUser
 
 object PostgresUserRepository {
-  ??? // todo: implement methods
+
+  given Meta[Language] = pgEnumStringOpt(
+    "languages",
+    {
+      case "RUS" => Some(RUS)
+      case "ENG" => Some(ENG)
+      case _     => None
+    },
+    {
+      case RUS => "RUS"
+      case ENG => "ENG"
+    },
+  )
+
+  given Meta[UserID] =
+    Meta[Long].imap(UserID.apply)(_.toLong())
+
+  given Meta[DateTime] =
+    Meta[java.sql.Timestamp].imap(ts => DateTime(ts.getTime))(dt => new java.sql.Timestamp(dt.getMillis()))
+
+  object queries {
+
+    def createQuery(user: CreateUser): Query0[User] =
+      sql"""
+        INSERT INTO users (id, createdAt, updatedAt, deletedAt, firstName, lastName, username, language, preferences)
+        VALUES (
+            ${user.id}, ${DateTime.now()}, ${DateTime.now()}, ${None}, ${user.firstName},
+            ${user.lastName}, ${user.username}, ${user.language}, ${user.preferences}
+        ) RETURNING *;
+      """.query[User]
+
+    def readQuery(id: UserID): Query0[User] =
+      sql"""
+        SELECT * FROM users
+        WHERE id=${id} AND deletedAt IS NULL;
+      """.query[User]
+
+    def deleteQuery(id: UserID): Query0[User] =
+      sql"""
+        UPDATE users
+        SET deletedAt=${DateTime.now()}
+        WHERE id=${id} AND deletedAt IS NULL
+        RETURNING *;
+      """.query[User]
+
+    def updateQuery(user: UpdateUser): Query0[User] =
+      (
+        fr"""
+            UPDATE users
+            SET updateTime=${DateTime.now}
+          """
+          ++ user.firstName.fold(fr"")(update => fr"SET firstName=${update}")
+          ++ user.lastName.fold(fr"")(update => fr"SET lastName=${update}")
+          ++ user.username.fold(fr"")(update => fr"SET username=${update}")
+          ++ user.language.fold(fr"")(update => fr"SET language=${update}")
+          ++ user.preferences.fold(fr"")(update => fr"SET preferences=${update}")
+          ++ fr"""
+            WHERE id=${user.id} AND deletedAt IS NULL
+            RETURNING *;
+          """
+      ).query[User]
+
+  }
+
 }

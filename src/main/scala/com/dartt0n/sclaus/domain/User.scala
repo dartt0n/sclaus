@@ -2,15 +2,21 @@ package com.dartt0n.sclaus.domain
 
 import org.joda.time.DateTime
 
-class UserID {
-  opaque type UserID = Long
-  def apply(value: Long): UserID            = value
-  extension (id: UserID) def toLong(): Long = id
+object UserID {
+  opaque type T = Long
+
+  def apply(value: Long): T = value
+
+  extension (id: T) def toLong(): Long = id
 }
 
-enum Language {
-  case RUS
-  case ENG
+type UserID = UserID.T
+
+sealed trait Language
+
+object languages {
+  case object RUS extends Language
+  case object ENG extends Language
 }
 
 final case class User(

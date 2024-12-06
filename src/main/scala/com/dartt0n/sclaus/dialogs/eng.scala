@@ -1,7 +1,5 @@
 package com.dartt0n.sclaus.dialogs
 
-import com.dartt0n.sclaus.domain.Language
-
-object EnglishDialogs extends Translation[Language.ENG.type] {
+object EnglishDialogs extends Dialogs {
   def greeting(): String = "Hello!"
 }
