@@ -5,10 +5,10 @@ import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.middleware.Logger
 import telegramium.bots.high.{Api, BotApi}
 
-object Main extends IOApp:
+object Main extends IOApp {
 
   def run(args: List[String]) =
-    val token = ""
+    val token = "" // todo: load from config
 
     for {
       _ <- IO.println("Ho, ho ho! Merry Christmas 🎅!")
@@ -20,3 +20,5 @@ object Main extends IOApp:
         bot.start()
       }
     } yield ExitCode.Success
+
+}
