@@ -10,6 +10,9 @@ object errors {
     case NotFound(override val cause: Option[Throwable] = None)
         extends AppError("user with the specified telegram id not found", cause)
 
+    case MessageWithoutAuthor(override val cause: Option[Throwable] = None)
+        extends AppError("message without author", cause)
+
   }
 
 }

@@ -7,7 +7,7 @@ object UserID {
 
   def apply(value: Long): T = value
 
-  extension (id: T) def toLong(): Long = id
+  extension (id: T) def toLong: Long = id
 }
 
 type UserID = UserID.T

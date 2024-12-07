@@ -1,4 +1,4 @@
-package com.dartt0n.sclaus.repository.user
+package com.dartt0n.sclaus.repository
 
 import com.dartt0n.sclaus.domain.CreateUser
 import com.dartt0n.sclaus.domain.errors.AppError

@@ -5,7 +5,7 @@ import cats.effect.kernel.MonadCancelThrow
 import cats.syntax.all._
 import com.dartt0n.sclaus.domain._
 import com.dartt0n.sclaus.domain.errors._
-import com.dartt0n.sclaus.repository.user
+import com.dartt0n.sclaus.repository.Repository
 
 trait UserStorage[F[_]] {
 
@@ -22,7 +22,7 @@ trait UserStorage[F[_]] {
 object UserStorage {
 
   def make[F[_]: MonadCancelThrow, DB[_]](
-    repo: user.Repository[DB],
+    repo: Repository[DB],
     functionK: DB ~> F,
   ): UserStorage[F] = new UserStorage[F] {
 
