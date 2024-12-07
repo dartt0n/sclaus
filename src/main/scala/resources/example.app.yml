@@ -1,0 +1,20 @@
+token: <telegram token>
+
+database:
+  url: "jdbc:postgresql://postgres:5432/sclaus"
+  driver: "org.postgresql.Driver"
+  username: postgres
+  password: postgres
+
+calendar:
+  stage1:
+    begin: "2024-12-08 00:00"
+    end: "2024-12-15 10:00"
+
+  stage2:
+    begin: "2024-12-15 15:00"
+    end: "2024-12-21 23:59"
+
+  stage3:
+    begin: "2024-12-22 10:00"
+    end: "2024-12-30 00:00"

@@ -13,15 +13,6 @@ import telegramium.bots.high.implicits._
 import com.dartt0n.sclaus.service.UserStorage
 import org.joda.time.DateTime
 
-case class EventCalendar(
-  stage1Begin: DateTime,
-  stage1End: DateTime,
-  stage2Begin: DateTime,
-  stage2End: DateTime,
-  stage3Begin: DateTime,
-  stage3End: DateTime,
-)
-
 class TelegramBot[F[_]](
   storage: UserStorage[F],
   calendar: EventCalendar,
@@ -75,7 +66,7 @@ class TelegramBot[F[_]](
               language = language,
               preferences = List.empty,
               state =
-                if DateTime.now().isBefore(calendar.stage1End)
+                if DateTime.now().isBefore(DateTime(calendar.stage1.end))
                 then READY
                 else LATECOMER,
             ),
