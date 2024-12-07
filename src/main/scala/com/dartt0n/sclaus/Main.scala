@@ -4,6 +4,7 @@ import cats.effect.{ExitCode, IO, IOApp}
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.middleware.Logger
 import telegramium.bots.high.{Api, BotApi}
+import cats.implicits._
 
 object Main extends IOApp {
 

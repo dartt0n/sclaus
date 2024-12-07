@@ -17,6 +17,13 @@ sealed trait Language
 object languages {
   case object RUS extends Language
   case object ENG extends Language
+
+  def fromIETFTag(tag: String): Option[Language] = tag match {
+    case "ru" => Some(RUS)
+    case "en" => Some(ENG)
+    case _    => None
+  }
+
 }
 
 sealed trait State

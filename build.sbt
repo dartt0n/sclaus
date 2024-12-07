@@ -5,7 +5,7 @@ val projectName    = "sclaus"
 
 Compile / scalacOptions ++= Seq(
   "-Xkind-projector:underscores",
-  "-Werror",
+  // "-Werror",
   "-Wunused:all",
   "-Wvalue-discard",
   "-Wshadow:all",

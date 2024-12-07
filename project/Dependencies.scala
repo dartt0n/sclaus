@@ -14,6 +14,7 @@ object Dependencies {
     "org.tpolecat" %% "doobie-core"     % "1.0.0-RC5",
     "org.tpolecat" %% "doobie-hikari"   % "1.0.0-RC5",
     "org.tpolecat" %% "doobie-postgres" % "1.0.0-RC5",
+    "tf.tofu"      %% "tofu"            % "0.13.6",
   )
 
 }
