@@ -46,7 +46,7 @@ private final class PostgresRepository extends Repository[ConnectionIO] {
 
 }
 
-private object PostgresRepository {
+object PostgresRepository {
 
   def make = new PostgresRepository()
 

@@ -1,11 +1,11 @@
 package com.dartt0n.sclaus.service
 
 import cats.~>
-import cats.effect.kernel.MonadCancelThrow
 import cats.syntax.all._
 import com.dartt0n.sclaus.domain._
 import com.dartt0n.sclaus.domain.errors._
 import com.dartt0n.sclaus.repository.Repository
+import cats.ApplicativeError
 
 trait UserStorage[F[_]] {
 
@@ -21,9 +21,11 @@ trait UserStorage[F[_]] {
 
 object UserStorage {
 
-  def make[F[_]: MonadCancelThrow, DB[_]](
+  def make[F[_], DB[_]](
     repo: Repository[DB],
     functionK: DB ~> F,
+  )(using
+    ae: ApplicativeError[F, Throwable],
   ): UserStorage[F] = new UserStorage[F] {
 
     override def create(user: CreateUser): F[Either[AppError.AlreadyExist, User]] =
