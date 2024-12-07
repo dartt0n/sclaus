@@ -19,6 +19,14 @@ object languages {
   case object ENG extends Language
 }
 
+sealed trait State
+
+object states {
+  case object READY      extends State
+  case object LATECOMER  extends State
+  case object REGISTERED extends State
+}
+
 final case class User(
   id: UserID,
   //
@@ -32,6 +40,7 @@ final case class User(
   language: Language,
   //
   preferences: List[String],
+  state: State,
 )
 
 final case class CreateUser(
@@ -43,6 +52,7 @@ final case class CreateUser(
   language: Language,
   //
   preferences: List[String],
+  state: State,
 )
 
 final case class UpdateUser(
@@ -54,4 +64,5 @@ final case class UpdateUser(
   language: Option[Language] = None,
   //
   preferences: Option[List[String]] = None,
+  state: Option[State] = None,
 )

@@ -1,18 +1,20 @@
 package com.dartt0n.sclaus.repository.user
 
+import com.dartt0n.sclaus.domain.CreateUser
 import com.dartt0n.sclaus.domain.Language
 import com.dartt0n.sclaus.domain.languages._
-import doobie.util.meta.Meta
-import doobie.postgres.implicits._
-import com.dartt0n.sclaus.domain.CreateUser
-import doobie.util.query.Query0
+import com.dartt0n.sclaus.domain.State
+import com.dartt0n.sclaus.domain.states._
+import com.dartt0n.sclaus.domain.UpdateUser
 import com.dartt0n.sclaus.domain.User
-import org.joda.time.DateTime
+import com.dartt0n.sclaus.domain.UserID
 import doobie._
 import doobie.implicits._
 import doobie.implicits.javasql._
-import com.dartt0n.sclaus.domain.UserID
-import com.dartt0n.sclaus.domain.UpdateUser
+import doobie.postgres.implicits._
+import doobie.util.meta.Meta
+import doobie.util.query.Query0
+import org.joda.time.DateTime
 
 object PostgresUserRepository {
 
@@ -29,6 +31,21 @@ object PostgresUserRepository {
     },
   )
 
+  given Meta[State] = pgEnumStringOpt(
+    "states",
+    {
+      case "READY"      => Some(READY)
+      case "LATECOMER"  => Some(LATECOMER)
+      case "REGISTERED" => Some(REGISTERED)
+      case _            => None
+    },
+    {
+      case READY      => "READY"
+      case LATECOMER  => "LATECOMER"
+      case REGISTERED => "REGISTERED"
+    },
+  )
+
   given Meta[UserID] =
     Meta[Long].imap(UserID.apply)(_.toLong())
 
@@ -39,10 +56,10 @@ object PostgresUserRepository {
 
     def createQuery(user: CreateUser): Query0[User] =
       sql"""
-        INSERT INTO users (id, createdAt, updatedAt, deletedAt, firstName, lastName, username, language, preferences)
+        INSERT INTO users (id, createdAt, updatedAt, deletedAt, firstName, lastName, username, language, preferences, state)
         VALUES (
             ${user.id}, ${DateTime.now()}, ${DateTime.now()}, ${None}, ${user.firstName},
-            ${user.lastName}, ${user.username}, ${user.language}, ${user.preferences}
+            ${user.lastName}, ${user.username}, ${user.language}, ${user.preferences}, ${user.state}
         ) RETURNING *;
       """.query[User]
 
@@ -71,6 +88,7 @@ object PostgresUserRepository {
           ++ user.username.fold(fr"")(update => fr"SET username=${update}")
           ++ user.language.fold(fr"")(update => fr"SET language=${update}")
           ++ user.preferences.fold(fr"")(update => fr"SET preferences=${update}")
+          ++ user.state.fold(fr"")(update => fr"SET state=${update}")
           ++ fr"""
             WHERE id=${user.id} AND deletedAt IS NULL
             RETURNING *;
