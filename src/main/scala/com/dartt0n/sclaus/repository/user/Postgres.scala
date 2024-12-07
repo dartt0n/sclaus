@@ -1,22 +1,54 @@
 package com.dartt0n.sclaus.repository.user
 
-import com.dartt0n.sclaus.domain.CreateUser
-import com.dartt0n.sclaus.domain.Language
+import cats.syntax.applicative._
+import cats.syntax.either._
+import com.dartt0n.sclaus.domain._
+import com.dartt0n.sclaus.domain.errors._
 import com.dartt0n.sclaus.domain.languages._
-import com.dartt0n.sclaus.domain.State
 import com.dartt0n.sclaus.domain.states._
-import com.dartt0n.sclaus.domain.UpdateUser
-import com.dartt0n.sclaus.domain.User
-import com.dartt0n.sclaus.domain.UserID
 import doobie._
 import doobie.implicits._
 import doobie.implicits.javasql._
 import doobie.postgres.implicits._
-import doobie.util.meta.Meta
-import doobie.util.query.Query0
+import doobie.util._
 import org.joda.time.DateTime
 
+private final class PostgresUserRepository extends Repository[ConnectionIO] {
+  import PostgresUserRepository.queries
+
+  override def create(user: CreateUser): ConnectionIO[Either[AppError.AlreadyExist, User]] =
+    queries.readQuery(user.id).option.flatMap {
+      case Some(user) => AppError.AlreadyExist().asLeft.pure
+      case None =>
+        queries.createQuery(user).option flatMap {
+          case Some(user) => user.asRight.pure
+          case None       => AppError.AlreadyExist().asLeft.pure
+        }
+    }
+
+  override def read(id: UserID): ConnectionIO[Either[AppError.NotFound, User]] =
+    queries.readQuery(id).option.flatMap {
+      case Some(value) => value.asRight.pure
+      case None        => AppError.NotFound().asLeft.pure
+    }
+
+  override def update(user: UpdateUser): ConnectionIO[Either[AppError.NotFound, User]] =
+    queries.updateQuery(user).option.flatMap {
+      case Some(value) => value.asRight.pure
+      case None        => AppError.NotFound().asLeft.pure
+    }
+
+  override def delete(id: UserID): ConnectionIO[Either[AppError.NotFound, User]] =
+    queries.deleteQuery(id).option.flatMap {
+      case Some(value) => value.asRight.pure
+      case None        => AppError.NotFound().asLeft.pure
+    }
+
+}
+
 object PostgresUserRepository {
+
+  def make = new PostgresUserRepository()
 
   given Meta[Language] = pgEnumStringOpt(
     "languages",
