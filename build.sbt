@@ -30,4 +30,6 @@ lazy val app = project
     assembly / assemblyOutputPath := file("target/assembly/sclaus.jar"),
   )
 
+Compile / run / fork := true
+
 enablePlugins(JavaAppPackaging)

@@ -93,6 +93,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runner
+      platforms:
+        - linux/amd64
     hostname: sclaus-server
     restart: unless-stopped
     ports:
@@ -100,8 +102,8 @@ services:
     environment:
       ENV: ENV
     depends_on:
-      kafka:
-        condition: service_started
+      # kafka:
+      # condition: service_started
 
       postgres:
         condition: service_healthy

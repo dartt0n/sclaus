@@ -5,7 +5,11 @@ import com.dartt0n.sclaus.domain.Language
 import com.dartt0n.sclaus.domain.languages._
 
 trait Dialogs {
+  // dialogs
   def greeting(user: User): String
+
+  // system messages
+  def onlyPrivateChatsAllowed(): String
 }
 
 object Dialogs {

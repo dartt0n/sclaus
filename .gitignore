@@ -1,4 +1,5 @@
 src/main/resources/application.conf
+sclaus.log
 
 # Environment
 .env
