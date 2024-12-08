@@ -64,7 +64,8 @@ services:
       POSTGRES_PASSWORD: ${PG_PASSWORD}
       POSTGRES_DB: ${PG_DATABASE:-sclaus}
     volumes:
-      - sclaus-postgres-data:/var/lib/postgresql/data
+      - sclaus-postgres-data:/var/lib/postgresql/data:rw
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test:
         [
