@@ -1,4 +1,4 @@
-src/main/scala/resources/app.yml
+src/main/resources/application.conf
 
 # Environment
 .env

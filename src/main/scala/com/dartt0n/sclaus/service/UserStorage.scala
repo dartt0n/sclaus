@@ -1,11 +1,11 @@
 package com.dartt0n.sclaus.service
 
 import cats.~>
+import cats.ApplicativeError
 import cats.syntax.all._
 import com.dartt0n.sclaus.domain._
 import com.dartt0n.sclaus.domain.errors._
 import com.dartt0n.sclaus.repository.Repository
-import cats.ApplicativeError
 
 trait UserStorage[F[_]] {
 

@@ -2,16 +2,21 @@ package com.dartt0n.sclaus
 
 import cats._
 import cats.effect._
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.ExitCode
+import cats.effect.IO
+import cats.effect.IOApp
 import cats.implicits._
 import com.dartt0n.sclaus.repository.PostgresRepository
 import com.dartt0n.sclaus.service.UserStorage
 import doobie._
 import doobie.free.connection.ConnectionIO
 import doobie.util.transactor.Transactor
+import io.circe.config.parser
+import io.circe.generic.auto._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.middleware.Logger
-import telegramium.bots.high.{Api, BotApi}
+import telegramium.bots.high.Api
+import telegramium.bots.high.BotApi
 
 object Main extends IOApp {
 
@@ -21,12 +26,7 @@ object Main extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] =
     for {
-      config <- Config
-        .load()
-        .fold(
-          err => IO.raiseError(new RuntimeException(s"failed to load config: $err")),
-          cfg => IO.pure(cfg),
-        )
+      config <- parser.decodeF[IO, Config]()
 
       _ <- IO.println("Ho, ho ho! Merry Christmas 🎅!")
       _ <- BlazeClientBuilder[IO].resource.use { http =>
@@ -42,7 +42,7 @@ object Main extends IOApp {
         val repository = PostgresRepository.make
         val storage    = UserStorage.make(repository, funcK(transactor))
 
-        given api: Api[IO] = BotApi(http = client, baseUrl = s"https://api.telegram.org/bot${config.token}")
+        given api: Api[IO] = BotApi(http = client, baseUrl = s"https://api.telegram.org/bot${config.telegram.token}")
         val bot            = TelegramBot(storage, config.calendar)
 
         bot.start()

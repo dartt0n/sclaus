@@ -1,21 +1,22 @@
 package com.dartt0n.sclaus
 
-import cats.effect.Async
 import cats.Parallel
+import cats.effect.Async
 import cats.syntax.all._
 import com.dartt0n.sclaus.dialogs.Dialogs
 import com.dartt0n.sclaus.domain._
 import com.dartt0n.sclaus.domain.languages._
 import com.dartt0n.sclaus.domain.states._
-import telegramium.bots.{ChatIntId, Message}
-import telegramium.bots.high._
-import telegramium.bots.high.implicits._
 import com.dartt0n.sclaus.service.UserStorage
 import org.joda.time.DateTime
+import telegramium.bots.ChatIntId
+import telegramium.bots.Message
+import telegramium.bots.high._
+import telegramium.bots.high.implicits._
 
 class TelegramBot[F[_]](
   storage: UserStorage[F],
-  calendar: EventCalendar,
+  calendar: EventCalendarConfig,
 )(using
   api: Api[F],
   asyncF: Async[F],

@@ -1,10 +1,10 @@
 package com.dartt0n.sclaus.repository
 
 import com.dartt0n.sclaus.domain.CreateUser
-import com.dartt0n.sclaus.domain.errors.AppError
+import com.dartt0n.sclaus.domain.UpdateUser
 import com.dartt0n.sclaus.domain.User
 import com.dartt0n.sclaus.domain.UserID
-import com.dartt0n.sclaus.domain.UpdateUser
+import com.dartt0n.sclaus.domain.errors.AppError
 
 trait Repository[F[_]] {
 
