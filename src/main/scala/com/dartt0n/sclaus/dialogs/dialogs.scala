@@ -7,6 +7,16 @@ import com.dartt0n.sclaus.domain.languages._
 trait Dialogs {
   // dialogs
   def greeting(user: User): String
+  def greetingReplyButton(): String
+
+  def rules(): String
+  def rulesReplyButton(): String
+
+  def timeline(): String
+  def timelineReplyButton(): String
+
+  def askPreferences(): String
+  def showPreferences(user: User): String
 
   // system messages
   def onlyPrivateChatsAllowed(): String

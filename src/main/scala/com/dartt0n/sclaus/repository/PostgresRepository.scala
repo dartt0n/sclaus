@@ -66,15 +66,27 @@ object PostgresRepository {
   given Meta[State] = pgEnumStringOpt(
     "states",
     {
-      case "READY"      => Some(READY)
-      case "LATECOMER"  => Some(LATECOMER)
-      case "REGISTERED" => Some(REGISTERED)
-      case _            => None
+      case "READY"                => Some(READY)
+      case "LATECOMER"            => Some(LATECOMER)
+      case "GREETING_ANSWERED"    => Some(GREETING_ANSWERED)
+      case "RULES_ANSWERED"       => Some(RULES_ANSWERED)
+      case "TIMELINE_ANSWERED"    => Some(TIMELINE_ANSWERED)
+      case "PREFERENCES_ANSWERED" => Some(PREFERENCES_ANSWERED)
+      case "PREFERENCES_EDITING"  => Some(PREFERENCES_EDITING)
+      case "TARGET_RECEIVED"      => Some(TARGET_RECEIVED)
+      case "GIFT_CONFIRMED"       => Some(GIFT_CONFIRMED)
+      case _                      => None
     },
     {
-      case READY      => "READY"
-      case LATECOMER  => "LATECOMER"
-      case REGISTERED => "REGISTERED"
+      case READY                => "READY"
+      case LATECOMER            => "LATECOMER"
+      case GREETING_ANSWERED    => "GREETING_ANSWERED"
+      case RULES_ANSWERED       => "RULES_ANSWERED"
+      case TIMELINE_ANSWERED    => "TIMELINE_ANSWERED"
+      case PREFERENCES_ANSWERED => "PREFERENCES_ANSWERED"
+      case PREFERENCES_EDITING  => "PREFERENCES_EDITING"
+      case TARGET_RECEIVED      => "TARGET_RECEIVED"
+      case GIFT_CONFIRMED       => "GIFT_CONFIRMED"
     },
   )
 
