@@ -77,14 +77,13 @@ class TelegramBot[F[_]: Logging.Make](
     dialog: Dialogs,
   ): F[Unit] =
     for {
-      maybeAlreadyRegisteredUser <-
-        debug"reading user ${telegramUser.id} from storage"
-          *> storage
-            .read(UserID(telegramUser.id))
-            .flatTap {
-              case Left(err)    => debug"user ${telegramUser.id} not found in storage"
-              case Right(value) => debug"user ${telegramUser.id} found in storage"
-            }
+      maybeAlreadyRegisteredUser <- debug"reading user ${telegramUser.id} from storage"
+        *> storage
+          .read(UserID(telegramUser.id))
+          .flatTap {
+            case Left(err)    => debug"user ${telegramUser.id} not found in storage"
+            case Right(value) => debug"user ${telegramUser.id} found in storage"
+          }
 
       isLateComer = DateTime.now().isAfter(DateTime(calendar.stage1.end))
 
@@ -103,17 +102,21 @@ class TelegramBot[F[_]: Logging.Make](
                   preferences = List.empty,
                   state = if isLateComer then LATECOMER else READY,
                 ),
-              ),
+              )
+              .flatTap {
+                case Right(_) => asyncF.unit
+                case Left(err) =>
+                  err.cause match {
+                    case None        => error"failed to create user with unknown error"
+                    case Some(cause) => errorCause"failed to create user with the following error" (cause)
+                  }
+              },
         user => asyncF.pure(Right(user)),
       )
 
       user <- maybeUser.fold(
-        err =>
-          error"creating user failed"
-            *> asyncF.raiseError(throw Exception("unknown user")),
-        user =>
-          info"user sucessfully created: ${user.id.toLong}"
-            *> asyncF.pure(user),
+        err => asyncF.raiseError(throw Exception("unknown user")),
+        user => asyncF.pure(user),
       )
 
       _ <- sendMessage(ChatIntId(msg.chat.id), dialog.greeting(user)).exec.void

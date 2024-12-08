@@ -88,8 +88,10 @@ object PostgresRepository {
 
     def createQuery(user: CreateUser): Query0[User] =
       sql"""
-        INSERT INTO users (id, createdAt, updatedAt, deletedAt, firstName, lastName, username, language, preferences, state)
-        VALUES (
+        INSERT INTO users (
+         "id", "createdAt", "updatedAt", "deletedAt", "firstName",
+         "lastName", "username", "language", "preferences", "state"
+        ) VALUES (
             ${user.id}, ${DateTime.now()}, ${DateTime.now()}, ${Option.empty[DateTime]}, ${user.firstName},
             ${user.lastName}, ${user.username}, ${user.language}, ${user.preferences}, ${user.state}
         ) RETURNING *;
@@ -98,14 +100,14 @@ object PostgresRepository {
     def readQuery(id: UserID): Query0[User] =
       sql"""
         SELECT * FROM users
-        WHERE id=$id AND deletedAt IS NULL;
+        WHERE "id"=$id AND "deletedAt" IS NULL;
       """.query[User]
 
     def deleteQuery(id: UserID): Query0[User] =
       sql"""
         UPDATE users
-        SET deletedAt=${DateTime.now()}
-        WHERE id=$id AND deletedAt IS NULL
+        SET "deletedAt"=${DateTime.now()}
+        WHERE "id"=$id AND "deletedAt" IS NULL
         RETURNING *;
       """.query[User]
 
@@ -113,16 +115,16 @@ object PostgresRepository {
       (
         fr"""
             UPDATE users
-            SET updateTime=${DateTime.now}
+            SET "updateTime"=${DateTime.now}
           """
-          ++ user.firstName.fold(fr"")(update => fr"SET firstName=$update")
-          ++ user.lastName.fold(fr"")(update => fr"SET lastName=$update")
-          ++ user.username.fold(fr"")(update => fr"SET username=$update")
-          ++ user.language.fold(fr"")(update => fr"SET language=$update")
-          ++ user.preferences.fold(fr"")(update => fr"SET preferences=$update")
-          ++ user.state.fold(fr"")(update => fr"SET state=$update")
+          ++ user.firstName.fold(fr"")(update => fr"""SET "firstName"=$update""")
+          ++ user.lastName.fold(fr"")(update => fr"""SET "lastName"=$update""")
+          ++ user.username.fold(fr"")(update => fr"""SET "username"=$update""")
+          ++ user.language.fold(fr"")(update => fr"""SET "language"=$update""")
+          ++ user.preferences.fold(fr"")(update => fr"""SET "preferences"=$update""")
+          ++ user.state.fold(fr"")(update => fr"""SET "state"=$update""")
           ++ fr"""
-            WHERE id=${user.id} AND deletedAt IS NULL
+            WHERE "id"=${user.id} AND "deletedAt" IS NULL
             RETURNING *;
           """
       ).query[User]
