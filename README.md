@@ -46,6 +46,16 @@ scalafmtAll # Format the code
 > sbt scalafmtAll
 > ```
 
+### Create Config File
+Create file `application.conf`, which describes application configuration in HOCON format.
+Take look at [example.application.conf](./src/main/resources/example.application.conf) to
+understand what to put into config.file
+
+### Launch application
+To launch the application, run the following command:
+```shell
+sbt run
+```
 
 ### Build the JAR File
 To build the project, run the following command:
@@ -89,9 +99,6 @@ After starting the project, you can access the following services at the specifi
 
 | service          | exposed port    |
 | ---------------- | --------------- |
-| sclaus-zookeeper | 127.0.0.1:32001 |
-| sclaus-kafka     | 127.0.0.1:32002 |
-| sclaus-kafka-ui  | 127.0.0.1:32003 |
 | sclaus-postgres  | 127.0.0.1:32004 |
 | sclaus-pgadmin   | 127.0.0.1:32005 |
 | sclaus-server    | 127.0.0.1:32006 |
@@ -99,7 +106,6 @@ After starting the project, you can access the following services at the specifi
 #### Futher Steps
 > [!IMPORTANT]
 > Use reverse proxy like [nginx](https://www.nginx.com), [caddy](https://caddyserver.com) or [traefik](https://traefik.io) to expose the services to the internet.
-
 
 ## History
 For the past three years (since 2022), [@dartt0n](https://t.me/dartt0n) (yes, it's me) create Secret Santa Bot for Innopolis University each time in a new language and with new functionalle. The very first bot was written in Python, the second one in Golang and this year I've decided to do it in Scala.
