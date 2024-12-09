@@ -43,7 +43,7 @@ object Main extends IOApp {
         val storage    = UserStorage.make(repository, funcK(transactor))
 
         given api: Api[IO] = BotApi(http = http, baseUrl = s"https://api.telegram.org/bot${config.telegram.token}")
-        val bot            = TelegramBot(storage, config.calendar)
+        val bot            = TelegramBot(storage, config.event.stage)
 
         bot.start()
       }

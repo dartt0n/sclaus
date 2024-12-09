@@ -2,14 +2,11 @@ package com.dartt0n.sclaus
 
 import io.circe._
 import io.circe.generic.auto._
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
-import scala.util.Try
 
 final case class Config(
   telegram: TelegramConfig,
   database: DatabaseConfig,
-  calendar: EventCalendarConfig,
+  event: EventConfig,
 )
 
 final case class TelegramConfig(
@@ -23,21 +20,31 @@ final case class DatabaseConfig(
   password: String,
 )
 
-val DTF = DateTimeFormat.forPattern("dd MMM YYYY HH:mm ZZZ")
+sealed trait Stage
 
-given Encoder[DateTime] with
-  def apply(dt: DateTime): Json = Json.fromString(dt.toString(DTF))
+object stages {
+  case object Registration extends Stage
+  case object Preparation  extends Stage
+  case object Final        extends Stage
+}
 
-given Decoder[DateTime] =
-  Decoder.decodeString.emapTry(s => Try { DTF.parseDateTime(s) })
+given Encoder[Stage] with
 
-final case class StageDateRange(
-  begin: DateTime,
-  end: DateTime,
-)
+  def apply(stage: Stage): Json = Json.fromString(stage match
+    case stages.Registration => "REGISTRATION"
+    case stages.Preparation  => "PREPARATION"
+    case stages.Final        => "FINAL",
+  )
 
-final case class EventCalendarConfig(
-  stage1: StageDateRange,
-  stage2: StageDateRange,
-  stage3: StageDateRange,
+given Decoder[Stage] =
+  Decoder.decodeString.emap(s =>
+    s match
+      case "REGISTRATION" => Right(stages.Registration)
+      case "PREPARATION"  => Right(stages.Preparation)
+      case "FINAL"        => Right(stages.Final)
+      case _              => Left(s"$s is not a valid stage"),
+  )
+
+case class EventConfig(
+  stage: Stage,
 )

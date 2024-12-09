@@ -8,7 +8,6 @@ import com.dartt0n.sclaus.domain._
 import com.dartt0n.sclaus.domain.languages._
 import com.dartt0n.sclaus.domain.states._
 import com.dartt0n.sclaus.service.UserStorage
-import org.joda.time.DateTime
 import telegramium.bots.ChatIntId
 import telegramium.bots.Message
 import telegramium.bots.ReplyParameters
@@ -19,7 +18,7 @@ import tofu.syntax.logging._
 
 class TelegramBot[F[_]: Logging.Make](
   storage: UserStorage[F],
-  calendar: EventCalendarConfig,
+  currentStage: Stage,
 )(using
   api: Api[F],
   asyncF: Async[F],
@@ -85,7 +84,7 @@ class TelegramBot[F[_]: Logging.Make](
             case Right(value) => debug"user ${telegramUser.id} found in storage"
           }
 
-      isLateComer = DateTime.now().isAfter(DateTime(calendar.stage1.end))
+      isLateComer = currentStage != stages.Registration
 
       // if user not found then create new one
       maybeUser <- maybeAlreadyRegisteredUser.fold(
