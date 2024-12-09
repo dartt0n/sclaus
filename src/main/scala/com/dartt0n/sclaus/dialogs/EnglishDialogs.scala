@@ -44,10 +44,10 @@ object EnglishDialogs extends Dialogs {
        |
        |3️⃣ You need to prepare present:
        | • The maximum value of the gift is 300-500 rubles
-       | • You need to make and **bring it to the office 319** before **December 23 17:00**
+       | • You need to make and **bring it to the office 319** before **December 19 17:00**
        | • Add the note or little postcard, which **includes the name of the person** for whom the present is
        |
-       |4️⃣ Pick up your gift on **December 24** at the office 319
+       |4️⃣ Pick up your gift on **December 20** at the office 319
        |
        |❗ If you leave early, you can pick up your gift from office 319 from 9:00 to 18:00 from Monday to Thursday, on Friday until 16:45, **please notify the keepers of gifts (office 319 employees) in advance**
        |
