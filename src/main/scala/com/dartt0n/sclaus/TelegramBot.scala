@@ -36,7 +36,7 @@ class TelegramBot[F[_]: Logging.Make](
       // Try obtain message author, skip if it is unknown
       telegramUser <- msg.from.fold {
         debug"message author is not specified"
-          *> asyncF.raiseError(throw Exception("message author is not specified"))
+          *> asyncF.raiseError(Exception("message author is not specified"))
       } { user =>
         debug"message from user ${user.id}"
           *> user.pure
@@ -45,7 +45,7 @@ class TelegramBot[F[_]: Logging.Make](
       // Skip if the author is a bot
       _ <- asyncF.whenA(telegramUser.isBot)(
         debug"ignoring message from bot"
-          *> asyncF.raiseError(throw Exception("bot is not allowed to use this bot")),
+          *> asyncF.raiseError(Exception("bot is not allowed to use this bot")),
       )
 
       // Extract language and building dialog system
@@ -61,7 +61,7 @@ class TelegramBot[F[_]: Logging.Make](
             dialog.onlyPrivateChatsAllowed(),
             replyParameters = Some(ReplyParameters(messageId = msg.messageId)),
           ).exec.void
-          >> asyncF.raiseError(throw Exception("this bot can only be used in private chats")),
+          >> asyncF.raiseError(Exception("this bot can only be used in private chats")),
       )
 
       // Handle /start command
@@ -134,7 +134,7 @@ class TelegramBot[F[_]: Logging.Make](
       )
 
       user <- maybeUser.fold(
-        err => asyncF.raiseError(throw Exception("unknown user")),
+        err => asyncF.raiseError(Exception("unknown user")),
         user => user.pure,
       )
 
@@ -161,15 +161,15 @@ class TelegramBot[F[_]: Logging.Make](
     for {
       user <- debug"reading user ${telegramUser.id} from storage"
         *> storage.read(UserID(telegramUser.id)).flatMap {
-          case Left(err)   => asyncF.raiseError(throw Exception("user not found"))
+          case Left(err)   => asyncF.raiseError(Exception("user not found"))
           case Right(user) => user.pure
         }
 
-      _ <- asyncF.raiseUnless(user.state == states.READY)(throw Exception("invalid state, skipping"))
+      _ <- asyncF.raiseUnless(user.state == states.READY)(Exception("invalid state, skipping"))
 
       user <- debug"updating user ${telegramUser.id} state"
         *> storage.update(UpdateUser(user.id, state = Some(states.GREETING_ANSWERED))).flatMap {
-          case Left(err)   => asyncF.raiseError(throw Exception("user not found"))
+          case Left(err)   => asyncF.raiseError(Exception("user not found"))
           case Right(user) => user.pure
         }
 
@@ -195,15 +195,15 @@ class TelegramBot[F[_]: Logging.Make](
     for {
       user <- debug"reading user ${telegramUser.id} from storage"
         *> storage.read(UserID(telegramUser.id)).flatMap {
-          case Left(err)   => asyncF.raiseError(throw Exception("user not found"))
+          case Left(err)   => asyncF.raiseError(Exception("user not found"))
           case Right(user) => user.pure
         }
 
-      _ <- asyncF.raiseUnless(user.state == states.GREETING_ANSWERED)(throw Exception("invalid state, skipping"))
+      _ <- asyncF.raiseUnless(user.state == states.GREETING_ANSWERED)(Exception("invalid state, skipping"))
 
       user <- debug"updating user ${telegramUser.id} state"
         *> storage.update(UpdateUser(user.id, state = Some(states.RULES_ANSWERED))).flatMap {
-          case Left(err)   => asyncF.raiseError(throw Exception("user not found"))
+          case Left(err)   => asyncF.raiseError(Exception("user not found"))
           case Right(user) => user.pure
         }
 
@@ -229,15 +229,15 @@ class TelegramBot[F[_]: Logging.Make](
     for {
       user <- debug"reading user ${telegramUser.id} from storage"
         *> storage.read(UserID(telegramUser.id)).flatMap {
-          case Left(err)   => asyncF.raiseError(throw Exception("user not found"))
+          case Left(err)   => asyncF.raiseError(Exception("user not found"))
           case Right(user) => user.pure
         }
 
-      _ <- asyncF.raiseUnless(user.state == states.RULES_ANSWERED)(throw Exception("invalid state, skipping"))
+      _ <- asyncF.raiseUnless(user.state == states.RULES_ANSWERED)(Exception("invalid state, skipping"))
 
       user <- debug"updating user ${telegramUser.id} state"
         *> storage.update(UpdateUser(user.id, state = Some(states.TIMELINE_ANSWERED))).flatMap {
-          case Left(err)   => asyncF.raiseError(throw Exception("user not found"))
+          case Left(err)   => asyncF.raiseError(Exception("user not found"))
           case Right(user) => user.pure
         }
 
