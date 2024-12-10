@@ -7,6 +7,8 @@ import cats.effect.IOApp
 import com.dartt0n.sclaus.repository.PostgresRepository
 import com.dartt0n.sclaus.service.UserStorage
 import doobie.free.connection.ConnectionIO
+import doobie.util.log.LogEvent
+import doobie.util.log.LogHandler
 import doobie.util.transactor.Transactor
 import io.circe.config.parser
 import io.circe.generic.auto.deriveDecoder
@@ -25,6 +27,10 @@ object Main extends IOApp {
   given Logging.Make[IO] = Logging.Make.plain[IO]
   given Logging[IO]      = summon[Logging.Make[IO]].byName("com.dartt0n.sclaus")
 
+  given databaseLogger: LogHandler[IO] = new LogHandler[IO] {
+    def run(logEvent: LogEvent): IO[Unit] = debug"doobie query: ${logEvent.sql}"
+  }
+
   def run(args: List[String]): IO[ExitCode] = {
     for {
       config <- parser.decodeF[IO, Config]()
@@ -37,7 +43,7 @@ object Main extends IOApp {
           url = config.database.url,
           user = config.database.username,
           password = config.database.password,
-          logHandler = None,
+          logHandler = Some(databaseLogger),
         )
         val repository = PostgresRepository.make
         val storage    = UserStorage.make(repository, funcK(transactor))
