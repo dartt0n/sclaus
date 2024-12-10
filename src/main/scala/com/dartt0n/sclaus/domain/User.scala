@@ -7,7 +7,10 @@ object UserID {
 
   def apply(value: Long): T = value
 
-  extension (id: T) def toLong: Long = id
+  extension (id: T)
+    def toLong: Long = id
+    def toString     = id.toLong.toString
+
 }
 
 type UserID = UserID.T
@@ -18,10 +21,15 @@ object languages {
   case object RUS extends Language
   case object ENG extends Language
 
-  def fromIETFTag(tag: String): Option[Language] = tag match {
+  def fromIETF(tag: String): Option[Language] = tag match {
     case "ru" => Some(RUS)
     case "en" => Some(ENG)
     case _    => None
+  }
+
+  def toIETF(lang: Language): String = lang match {
+    case RUS => "ru"
+    case ENG => "en"
   }
 
 }
