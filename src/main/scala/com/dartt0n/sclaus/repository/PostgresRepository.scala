@@ -130,14 +130,14 @@ object PostgresRepository {
     (
       fr"""
             UPDATE users
-            SET "updateTime"=${DateTime.now}
+            SET "updatedAt"=${DateTime.now}
           """
-        ++ user.firstName.fold(fr"")(update => fr""", SET "firstName"=$update""")
-        ++ user.lastName.fold(fr"")(update => fr""", SET "lastName"=$update""")
-        ++ user.username.fold(fr"")(update => fr""", SET "username"=$update""")
-        ++ user.language.fold(fr"")(update => fr""", SET "language"=$update""")
-        ++ user.preferences.fold(fr"")(update => fr""", SET "preferences"=$update""")
-        ++ user.state.fold(fr"")(update => fr""", SET "state"=$update""")
+        ++ user.firstName.fold(fr"")(update => fr""", "firstName"=$update""")
+        ++ user.lastName.fold(fr"")(update => fr""", "lastName"=$update""")
+        ++ user.username.fold(fr"")(update => fr""", "username"=$update""")
+        ++ user.language.fold(fr"")(update => fr""", "language"=$update""")
+        ++ user.preferences.fold(fr"")(update => fr""", "preferences"=$update""")
+        ++ user.state.fold(fr"")(update => fr""", "state"=$update""")
         ++ fr"""
             WHERE "id"=${user.id} AND "deletedAt" IS NULL
             RETURNING *;
