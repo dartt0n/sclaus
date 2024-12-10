@@ -7,6 +7,8 @@ import cats.syntax.all._
 import com.dartt0n.sclaus.domain._
 import com.dartt0n.sclaus.domain.errors._
 import com.dartt0n.sclaus.repository.Repository
+import doobie.util.log.LogEvent
+import doobie.util.log.LogHandler
 import tofu.logging.Logging
 import tofu.syntax.logging._
 
@@ -33,7 +35,11 @@ object UserStorage {
 
     private given logging: Logging[F] = Logging.Make[F].forService[UserStorage[F]]
 
-    override def create(user: CreateUser): F[Either[AppError.AlreadyExist, User]] =
+    given LogHandler[F] = new LogHandler[F] {
+      def run(logEvent: LogEvent): F[Unit] = debug"query: ${logEvent.sql}"
+    }
+
+    override def create(user: CreateUser): F[Either[AppError.AlreadyExist, User]] = {
       functionK(repo.create(user)).attempt.flatMap {
         case Left(error) =>
           errorCause"create user failed with unexpected error" (error)
@@ -50,8 +56,9 @@ object UserStorage {
           debug"create user successfully finished"
             >> value.asRight.pure
       }
+    }
 
-    override def read(id: UserID): F[Either[AppError.NotFound, User]] =
+    override def read(id: UserID): F[Either[AppError.NotFound, User]] = {
       functionK(repo.read(id)).attempt.flatMap {
         case Left(error) =>
           errorCause"read user failed with unexpected error" (error)
@@ -68,8 +75,9 @@ object UserStorage {
           debug"read user successfully finished"
             .flatMap(_ => value.asRight.pure[F])
       }
+    }
 
-    override def update(user: UpdateUser): F[Either[AppError.NotFound, User]] =
+    override def update(user: UpdateUser): F[Either[AppError.NotFound, User]] = {
       functionK(repo.update(user)).attempt.flatMap {
         case Left(error) =>
           errorCause"update user failed with unexpected error" (error)
@@ -86,8 +94,9 @@ object UserStorage {
           debug"update user successfully finished"
             >> value.asRight.pure
       }
+    }
 
-    override def delete(id: UserID): F[Either[AppError.NotFound, User]] =
+    override def delete(id: UserID): F[Either[AppError.NotFound, User]] = {
       functionK(repo.delete(id)).attempt.flatMap {
         case Left(error) =>
           errorCause"delete user failed with unexpected error" (error)
@@ -105,6 +114,7 @@ object UserStorage {
             >> value.asRight.pure
 
       }
+    }
 
   }
 

@@ -36,12 +36,13 @@ object RussianDialogs extends Dialogs {
     // todo: translate english
     s""""""
 
-  def onlyPrivateChatsAllowed(): String =
+  def onlyPrivateChatsAllowed(): String = {
     """👋 Привет!
        |
        |⚠️ Пожалуйста, обратите внимание, я общаюсь только в личных сообщениях
        |
        |🤫 Здесь не стоит делиться своими секретиками
        |""".stripMargin
+  }
 
 }

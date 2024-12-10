@@ -36,14 +36,15 @@ given Encoder[Stage] with
     case stages.Final        => "FINAL",
   )
 
-given Decoder[Stage] =
-  Decoder.decodeString.emap(s =>
+given Decoder[Stage] = {
+  Decoder.decodeString.emap { s =>
     s match
       case "REGISTRATION" => Right(stages.Registration)
       case "PREPARATION"  => Right(stages.Preparation)
       case "FINAL"        => Right(stages.Final)
-      case _              => Left(s"$s is not a valid stage"),
-  )
+      case _              => Left(s"$s is not a valid stage")
+  }
+}
 
 case class EventConfig(
   stage: Stage,

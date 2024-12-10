@@ -25,7 +25,7 @@ object Main extends IOApp {
   given Logging.Make[IO] = Logging.Make.plain[IO]
   given Logging[IO]      = summon[Logging.Make[IO]].byName("com.dartt0n.sclaus")
 
-  def run(args: List[String]): IO[ExitCode] =
+  def run(args: List[String]): IO[ExitCode] = {
     for {
       config <- parser.decodeF[IO, Config]()
 
@@ -48,5 +48,6 @@ object Main extends IOApp {
         bot.start()
       }
     } yield ExitCode.Success
+  }
 
 }

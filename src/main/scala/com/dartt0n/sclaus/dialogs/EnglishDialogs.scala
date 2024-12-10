@@ -4,7 +4,7 @@ import com.dartt0n.sclaus.domain.User
 
 object EnglishDialogs extends Dialogs {
 
-  def greeting(user: User): String =
+  def greeting(user: User): String = {
     s"""🎅 Hello there${user.firstName.map(", " + _).getOrElse("")}, ho ho ho! It's Santa Claus here, spreading joy and cheer! ☃️
        |
        |🧝‍♂️ My clever little elves have been working hard to help me bring some holiday magic to the wonderful folks at Innopolis University.
@@ -13,11 +13,12 @@ object EnglishDialogs extends Dialogs {
        |
        |Are you ready for a ✨ miracle ✨?
        |""".stripMargin
+  }
 
   def greetingReplyButton(): String =
     s"""Of course, let's go!"""
 
-  def rules(): String =
+  def rules(): String = {
     s"""🔥 That's the spirit, keep it up!
        |
        |🤫 Meanwhile, let me explain you how Secret Santa works:
@@ -30,11 +31,12 @@ object EnglishDialogs extends Dialogs {
        |
        |📜 However, there are several important rules and dates for each participant. Are you listening carefully?
        |""".stripMargin
+  }
 
   def rulesReplyButton(): String =
     s"""I'm all ears"""
 
-  def timeline(): String =
+  def timeline(): String = {
     s"""👍 Good to hear!
        |
        |So, please, pay attention to the following points:
@@ -54,11 +56,12 @@ object EnglishDialogs extends Dialogs {
        |
        |Hope everything is clear, so let's begin the fun? Are you ready to specify preferences about your present?`
        |""".stripMargin
+  }
 
   def timelineReplyButton(): String =
     s"""Yes, I'm ready""".stripMargin
 
-  def askPreferences(): String =
+  def askPreferences(): String = {
     s"""🤩 Ho ho ho!
        |
        |🥺 Probably, the person who would receive your name will not know about you anything...
@@ -67,17 +70,19 @@ object EnglishDialogs extends Dialogs {
        |
        |Please tell me about yourself: what kind of gift would you like to receive, what do you dream about, what on the contrary is not worth giving, and I will try to make a short list of this information. You've got my attention!
        |""".stripMargin
+  }
 
   def showPreferences(user: User): String =
     // todo: implement
     s""""""
 
-  def onlyPrivateChatsAllowed(): String =
+  def onlyPrivateChatsAllowed(): String = {
     s"""👋 Hi!
        |
        |⚠️ Please note, I only communicate in private messages
        |
        |🤫 It's not worth sharing your secrets here
        |""".stripMargin
+  }
 
 }
