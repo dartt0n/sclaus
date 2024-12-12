@@ -36,13 +36,31 @@ object RussianDialogs extends Dialogs {
     // todo: translate english
     s""""""
 
-  def onlyPrivateChatsAllowed(): String = {
+  def revealTarget(target: User): String =
+    // todo: translate englush
+    s"""
+        |""".stripMargin
+
+  def remindAboutGift(): String =
+    // todo: translate englush
+    s"""
+        |""".stripMargin
+
+  def inviteToParty(): String =
+    // todo: translate englush
+    s"""
+        |""".stripMargin
+
+  def onlyPrivateChatsAllowed(): String =
     """👋 Привет!
        |
        |⚠️ Пожалуйста, обратите внимание, я общаюсь только в личных сообщениях
        |
        |🤫 Здесь не стоит делиться своими секретиками
        |""".stripMargin
-  }
+
+  def registrationIsClosed(): String =
+    s"""
+       |""".stripMargin
 
 }

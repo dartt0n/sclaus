@@ -68,13 +68,48 @@ object EnglishDialogs extends Dialogs {
        |
        |🤗 So, You need to help him/her to prepare a good gift for you!
        |
-       |Please tell me about yourself: what kind of gift would you like to receive, what do you dream about, what on the contrary is not worth giving, and I will try to make a short list of this information. You've got my attention!
+       |✍️ Please tell me about yourself (in a single message): what kind of gift would you like to receive, what do you dream about, what on the contrary is not worth giving, and I will try to make a short list of this information. You've got my attention!
        |""".stripMargin
   }
 
   def showPreferences(user: User): String =
-    // todo: implement
-    s""""""
+    s"""🎅 Nice choices!
+       |
+       |⚠️ Please make sure that I have written everything down correctly, because your Secret Santa will see exactly this information:
+       |${user.preferences.map("•" + _).mkString("\n")}
+       |""".stripMargin
+
+  def revealTarget(target: User): String = {
+    s"""💥 Moment of truth!
+       |
+       |🥁 This year you will be the secret santa for...
+       |
+       |🎁 ${(
+        target.firstName.map(_ + " ").getOrElse("")
+          + target.lastName.map(_ + " ").getOrElse("")
+          + target.username.map("@" + _).getOrElse("")
+      ).strip()}
+       |Their preferences are:
+       |${target.preferences.map("•" + _).mkString("\n")}
+       |""".stripMargin
+  }
+
+  def remindAboutGift(): String = {
+    s"""❗ Quick Reminder!
+       |You need to prepare present
+       | • The maximum value of the gift is 300-500 rubles
+       | • You need to make and **bring it to the office 319** before **December 19 17:00**
+       | • Add the note or little postcard, which **includes the name of the person** for whom the present is
+       |
+       |🎁 Pick up your gift on **December 20** at the office 319
+       |
+       |⏰ If you leave early, you can pick up your gift from office 319 from 9:00 to 18:00 from Monday to Thursday, on Friday until 16:45, **please notify the keepers of gifts (office 319 employees) in advance**
+       |""".stripMargin
+  }
+
+  def inviteToParty(): String =
+    s"""
+       |""".stripMargin
 
   def onlyPrivateChatsAllowed(): String = {
     s"""👋 Hi!
@@ -84,5 +119,9 @@ object EnglishDialogs extends Dialogs {
        |🤫 It's not worth sharing your secrets here
        |""".stripMargin
   }
+
+  def registrationIsClosed(): String =
+    s"""🫢 Ooops, sorry, registration is already closed...
+       |"""".stripMargin
 
 }

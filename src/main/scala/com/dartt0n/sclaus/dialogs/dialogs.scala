@@ -18,8 +18,13 @@ trait Dialogs {
   def askPreferences(): String
   def showPreferences(user: User): String
 
+  def revealTarget(target: User): String
+  def remindAboutGift(): String
+  def inviteToParty(): String
+
   // system messages
   def onlyPrivateChatsAllowed(): String
+  def registrationIsClosed(): String
 }
 
 object Dialogs {
