@@ -83,7 +83,9 @@ object EnglishDialogs extends Dialogs {
   def prefButtonErr(): String = "No, there is a mistake, let's try again"
 
   def registrationComplete(): String =
-    s"""...
+    s"""👏 Nice job!
+       |
+       |⌛ Now you will have to wait until December 13th, when it will become known for whom you should prepare a gift!
        |""".stripMargin
 
   def revealTarget(target: User): String = {
@@ -115,7 +117,7 @@ object EnglishDialogs extends Dialogs {
   }
 
   def inviteToParty(): String =
-    s"""
+    s"""🎅 The celebration is in full swing! Come to 319 for your gift, and don't forget the New Year mood! 🎊
        |""".stripMargin
 
   def onlyPrivateChatsAllowed(): String = {
