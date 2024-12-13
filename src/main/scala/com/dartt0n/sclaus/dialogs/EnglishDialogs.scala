@@ -122,6 +122,6 @@ object EnglishDialogs extends Dialogs {
 
   def registrationIsClosed(): String =
     s"""🫢 Ooops, sorry, registration is already closed...
-       |"""".stripMargin
+       |""".stripMargin
 
 }

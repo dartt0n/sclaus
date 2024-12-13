@@ -16,6 +16,7 @@ import telegramium.bots.ReplyParameters
 import telegramium.bots.high._
 import telegramium.bots.high.implicits._
 import tofu.logging.Logging
+import tofu.syntax.feither._
 import tofu.syntax.logging._
 
 class TelegramBot[F[_]: Logging.Make](
@@ -48,7 +49,7 @@ class TelegramBot[F[_]: Logging.Make](
           *> asyncF.raiseError(Exception("bot is not allowed to use this bot")),
       )
 
-      // Extract language and building dialog system
+      // Extract language and build a dialog system
       _ <- debug"user language is ${telegramUser.languageCode.getOrElse("unknown")}"
       language = telegramUser.languageCode.flatMap(languages.fromIETF).getOrElse(ENG)
       dialog   = Dialogs.fromLanguage(language)
@@ -65,37 +66,44 @@ class TelegramBot[F[_]: Logging.Make](
       )
 
       // Handle /start command
-      _ <- msg.text.filter(_.toLowerCase().startsWith("/start")).pure >> {
-        debug"received /start command"
-          *> onStartCommand(msg, telegramUser, language, dialog)
-          <* debug"successfully processed /start command"
-      }
+      _ <- msg.text
+        .filter(_.toLowerCase().startsWith("/start"))
+        .fold(().pure) { _ =>
+          debug"received /start command"
+            *> onStartCommand(msg, telegramUser, language, dialog)
+            <* debug"successfully processed /start command"
+        }
         .handleErrorWith(err => error"error while processing /start command: ${err.getMessage()}")
 
-      //
-
       // Handle greeting reply
-      _ <- msg.text.filter(_ == dialog.greetingReplyButton()).pure >> {
-        debug"received answer to greeing message"
-          *> onGreetingReply(msg, telegramUser, dialog)
-          <* debug"successfully processed answer to greeting message"
-      }
+      _ <- msg.text
+        .filter(_ == dialog.greetingReplyButton())
+        .fold(().pure) { _ =>
+          debug"received answer to greeing message"
+            *> onGreetingReply(msg, telegramUser, dialog)
+            <* debug"successfully processed answer to greeting message"
+        }
         .handleErrorWith(err => error"error while processing reply to greeting message: ${err.getMessage()}")
 
       // Handle rules reply
-      _ <- msg.text.filter(_ == dialog.rulesReplyButton()).pure >> {
-        debug"received answer to rules message"
-          *> onRulesReply(msg, telegramUser, dialog)
-          <* debug"successfully processed answer to rules message"
-      }
+      _ <- msg.text
+        .filter(_ == dialog.rulesReplyButton())
+        .fold(().pure) { _ =>
+          debug"received answer to rules message"
+            *> onRulesReply(msg, telegramUser, dialog)
+            <* debug"successfully processed answer to rules message"
+        }
         .handleErrorWith(err => error"error while processing reply to rules message: ${err.getMessage()}")
 
       // Handle timeline reply
-      _ <- msg.text.filter(_ == dialog.timelineReplyButton()).pure >> {
-        debug"received answer to timeline message"
-          *> onTimelineReply(msg, telegramUser, dialog)
-          <* debug"successfully processed answer to timeline message"
-      }.handleErrorWith(err => error"error while processing reply to timeline message: ${err.getMessage()}")
+      _ <- msg.text
+        .filter(_ == dialog.timelineReplyButton())
+        .fold(().pure) { _ =>
+          debug"received answer to timeline message"
+            *> onTimelineReply(msg, telegramUser, dialog)
+            <* debug"successfully processed answer to timeline message"
+        }
+        .handleErrorWith(err => error"error while processing reply to timeline message: ${err.getMessage()}")
 
     } yield ()).handleErrorWith(err => info"error while processing message: ${err.getMessage()}")
   }
@@ -107,19 +115,16 @@ class TelegramBot[F[_]: Logging.Make](
     dialog: Dialogs,
   ): F[Unit] = {
     for {
-      maybeAlreadyRegisteredUser <- debug"reading user ${telegramUser.id} from storage"
-        *> storage.read(UserID(telegramUser.id)).flatTap {
-          case Left(err)    => debug"user ${telegramUser.id} not found in storage"
-          case Right(value) => debug"user ${telegramUser.id} found in storage"
-        }
+      _ <- asyncF.unlessA(currentStage == stages.Registration) {
+        debug"registration is closed, denying request with message"
+          *> sendMessage(ChatIntId(msg.chat.id), dialog.registrationIsClosed()).exec.void
+          >> asyncF.raiseError(Exception("registration is closed"))
+      }
 
-      isLateComer = currentStage != stages.Registration
-
-      // if user not found then create new one
-      maybeUser <- maybeAlreadyRegisteredUser.fold(
-        err =>
-          debug"creating new user with id ${telegramUser.id}"
-            *> storage.create(
+      user <- debug"reading user ${telegramUser.id} from storage"
+        *> storage.read(UserID(telegramUser.id)).getOrElseF {
+          storage
+            .create(
               CreateUser(
                 id = UserID(telegramUser.id),
                 firstName = Some(telegramUser.firstName),
@@ -127,18 +132,14 @@ class TelegramBot[F[_]: Logging.Make](
                 username = telegramUser.username,
                 language = language,
                 preferences = List.empty,
-                state = if isLateComer then LATECOMER else READY,
+                state = READY,
               ),
-            ),
-        user => user.asRight.pure,
-      )
-
-      user <- maybeUser.fold(
-        err => asyncF.raiseError(Exception("unknown user")),
-        user => user.pure,
-      )
-
-      // todo: send different message for latecomer
+            )
+            .foldF(
+              err => asyncF.raiseError(Exception("unknown user")),
+              user => user.pure,
+            )
+        }
 
       _ <- sendMessage(
         ChatIntId(msg.chat.id),

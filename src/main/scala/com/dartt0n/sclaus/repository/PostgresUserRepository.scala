@@ -1,57 +1,65 @@
 package com.dartt0n.sclaus.repository
 
-import cats.syntax.applicative._
-import cats.syntax.either._
+import cats.syntax.all._
 import com.dartt0n.sclaus.domain._
-import com.dartt0n.sclaus.domain.errors._
 import com.dartt0n.sclaus.domain.languages._
 import com.dartt0n.sclaus.domain.states._
 import doobie._
-import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.implicits.javasql._
 import doobie.postgres.implicits._
-import doobie.util._
 import org.joda.time.DateTime
+import tofu.syntax.foption._
 
-private final class PostgresRepository extends Repository[ConnectionIO] {
+private final class PostgresUserRepository extends UserRepository[ConnectionIO] {
 
-  import PostgresRepository._
+  import PostgresUserRepository._
 
-  override def create(user: CreateUser): ConnectionIO[Either[AppError.AlreadyExist, User]] = {
-    readQuery(user.id).option.flatMap {
-      case Some(user) => AppError.AlreadyExist().asLeft.pure
-      case None =>
-        createQuery(user).option flatMap {
-          case Some(user) => user.asRight.pure
-          case None       => AppError.AlreadyExist().asLeft.pure
-        }
-    }
+  override def create(user: CreateUser): ConnectionIO[Either[UserRepositoryError.Create, User]] = {
+    // readQuery(user.id).option
+    //   .toLeftF(
+    //      createQuery(user)
+    //      .option
+    //       .toRightF(UserRepositoryError.Create.Conflict.pure)
+    //    )
+    //   .flatMap {
+    //     case Left(value)  => UserRepositoryError.Create.AlreadyExist.asLeft.pure
+    //     case Right(value) => value.pure
+    //   }
+    readQuery(user.id).option
+      .flatMap {
+        case Some(value) => UserRepositoryError.Create.AlreadyExist.asLeft.pure
+        case None =>
+          createQuery(user).option.flatMap {
+            case Some(value) => value.asRight.pure
+            case None        => UserRepositoryError.Create.Conflict.asLeft.pure
+          }
+      }
   }
 
-  override def read(id: UserID): ConnectionIO[Either[AppError.NotFound, User]] =
+  override def read(id: UserID): ConnectionIO[Either[UserRepositoryError.Read, User]] =
     readQuery(id).option.flatMap {
       case Some(value) => value.asRight.pure
-      case None        => AppError.NotFound().asLeft.pure
+      case None        => UserRepositoryError.Read.NotFound.asLeft.pure
     }
 
-  override def update(user: UpdateUser): ConnectionIO[Either[AppError.NotFound, User]] =
+  override def update(user: UpdateUser): ConnectionIO[Either[UserRepositoryError.Update, User]] =
     updateQuery(user).option.flatMap {
       case Some(value) => value.asRight.pure
-      case None        => AppError.NotFound().asLeft.pure
+      case None        => UserRepositoryError.Update.NotFound.asLeft.pure
     }
 
-  override def delete(id: UserID): ConnectionIO[Either[AppError.NotFound, User]] =
+  override def delete(id: UserID): ConnectionIO[Either[UserRepositoryError.Delete, User]] =
     deleteQuery(id).option.flatMap {
       case Some(value) => value.asRight.pure
-      case None        => AppError.NotFound().asLeft.pure
+      case None        => UserRepositoryError.Delete.NotFound.asLeft.pure
     }
 
 }
 
-object PostgresRepository {
+object PostgresUserRepository {
 
-  def make = new PostgresRepository()
+  def make = new PostgresUserRepository()
 
   given Meta[Language] = pgEnumStringOpt(
     "languages",
@@ -70,7 +78,6 @@ object PostgresRepository {
     "states",
     {
       case "READY"                => Some(READY)
-      case "LATECOMER"            => Some(LATECOMER)
       case "GREETING_ANSWERED"    => Some(GREETING_ANSWERED)
       case "RULES_ANSWERED"       => Some(RULES_ANSWERED)
       case "TIMELINE_ANSWERED"    => Some(TIMELINE_ANSWERED)
@@ -82,7 +89,6 @@ object PostgresRepository {
     },
     {
       case READY                => "READY"
-      case LATECOMER            => "LATECOMER"
       case GREETING_ANSWERED    => "GREETING_ANSWERED"
       case RULES_ANSWERED       => "RULES_ANSWERED"
       case TIMELINE_ANSWERED    => "TIMELINE_ANSWERED"

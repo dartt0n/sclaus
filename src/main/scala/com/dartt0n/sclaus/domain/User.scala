@@ -38,7 +38,6 @@ sealed trait State
 
 object states {
   case object READY                extends State
-  case object LATECOMER            extends State
   case object GREETING_ANSWERED    extends State
   case object RULES_ANSWERED       extends State
   case object TIMELINE_ANSWERED    extends State

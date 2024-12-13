@@ -4,7 +4,7 @@ import cats.~>
 import cats.effect.ExitCode
 import cats.effect.IO
 import cats.effect.IOApp
-import com.dartt0n.sclaus.repository.PostgresRepository
+import com.dartt0n.sclaus.repository.PostgresUserRepository
 import com.dartt0n.sclaus.service.UserStorage
 import doobie.free.connection.ConnectionIO
 import doobie.util.log.LogEvent
@@ -45,7 +45,7 @@ object Main extends IOApp {
           password = config.database.password,
           logHandler = Some(databaseLogger),
         )
-        val repository = PostgresRepository.make
+        val repository = PostgresUserRepository.make
         val storage    = UserStorage.make(repository, funcK(transactor))
 
         given api: Api[IO] = BotApi(http = http, baseUrl = s"https://api.telegram.org/bot${config.telegram.token}")
