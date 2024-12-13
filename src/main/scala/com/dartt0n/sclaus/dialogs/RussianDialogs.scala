@@ -36,8 +36,9 @@ object RussianDialogs extends Dialogs {
     // todo: translate english
     s""""""
 
-  def replyPreferencesOK(): String  = ""
-  def replyPreferencesErr(): String = ""
+  def prefButtonOk(): String         = ""
+  def prefButtonErr(): String        = ""
+  def registrationComplete(): String = ""
 
   def revealTarget(target: User): String =
     // todo: translate englush

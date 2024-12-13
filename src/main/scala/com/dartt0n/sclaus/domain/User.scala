@@ -37,14 +37,13 @@ object languages {
 sealed trait State
 
 object states {
-  case object READY                extends State
-  case object GREETING_ANSWERED    extends State
-  case object RULES_ANSWERED       extends State
-  case object TIMELINE_ANSWERED    extends State
-  case object PREFERENCES_ANSWERED extends State
-  case object PREFERENCES_EDITING  extends State
-  case object TARGET_RECEIVED      extends State
-  case object GIFT_CONFIRMED       extends State
+  case object READY                 extends State
+  case object GREETING_ANSWERED     extends State
+  case object RULES_ANSWERED        extends State
+  case object TIMELINE_ANSWERED     extends State
+  case object PREFERENCES_ANSWERED  extends State
+  case object REGISTRATION_COMPLETE extends State
+  case object TARGET_RECEIVED       extends State
 }
 
 final case class User(

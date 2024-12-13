@@ -61,7 +61,7 @@ object Main extends IOApp {
         given api: Api[IO] = BotApi(http = http, baseUrl = s"https://api.telegram.org/bot${config.telegram.token}")
         val bot            = TelegramBot(repo, parser, config.event.stage)
 
-        bot.start()
+        bot.startupHook() >> bot.start() >> bot.shutdownHook()
       }
     } yield ExitCode.Success
   }

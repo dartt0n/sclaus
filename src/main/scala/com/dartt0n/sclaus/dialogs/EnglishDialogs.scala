@@ -40,18 +40,18 @@ object EnglishDialogs extends Dialogs {
     s"""👍 Good to hear!
        |
        |So, please, pay attention to the following points:
-       |1️⃣ You need to specify your preferences in the bot before **December 12, 20:00**, otherwise you will not participate
+       |1️⃣ You need to specify your preferences in the bot before <b>December 12, 20:00</b>, otherwise you will not participate
        |
-       |2️⃣ On **December 13**, you will receive the name of the person and his preferences to prepare a gift
+       |2️⃣ On <b>December 13</b>, you will receive the name of the person and his preferences to prepare a gift
        |
        |3️⃣ You need to prepare present:
        | • The maximum value of the gift is 300-500 rubles
-       | • You need to make and **bring it to the office 319** before **December 19 17:00**
-       | • Add the note or little postcard, which **includes the name of the person** for whom the present is
+       | • You need to make and <b>bring it to the office 319</b> before <b>December 19 17:00</b>
+       | • Add the note or little postcard, which <b>includes the name of the person</b> for whom the present is
        |
-       |4️⃣ Pick up your gift on **December 20** at the office 319
+       |4️⃣ Pick up your gift on <b>December 20</b> at the office 319
        |
-       |❗ If you leave early, you can pick up your gift from office 319 from 9:00 to 18:00 from Monday to Thursday, on Friday until 16:45, **please notify the keepers of gifts (office 319 employees) in advance**
+       |❗ If you leave early, you can pick up your gift from office 319 from 9:00 to 18:00 from Monday to Thursday, on Friday until 16:45, <b>please notify the keepers of gifts (office 319 employees) in advance</b>
        |
        |
        |Hope everything is clear, so let's begin the fun? Are you ready to specify preferences about your present?`
@@ -79,8 +79,12 @@ object EnglishDialogs extends Dialogs {
        |${user.preferences.map("•" + _).mkString("\n")}
        |""".stripMargin
 
-  def replyPreferencesOK(): String  = "Everything is right"
-  def replyPreferencesErr(): String = "No, there is a mistake, let's try again"
+  def prefButtonOk(): String  = "Everything is right"
+  def prefButtonErr(): String = "No, there is a mistake, let's try again"
+
+  def registrationComplete(): String =
+    s"""...
+       |""".stripMargin
 
   def revealTarget(target: User): String = {
     s"""💥 Moment of truth!
@@ -101,12 +105,12 @@ object EnglishDialogs extends Dialogs {
     s"""❗ Quick Reminder!
        |You need to prepare present
        | • The maximum value of the gift is 300-500 rubles
-       | • You need to make and **bring it to the office 319** before **December 19 17:00**
-       | • Add the note or little postcard, which **includes the name of the person** for whom the present is
+       | • You need to make and <b>bring it to the office 319</b> before <b>December 19 17:00</b>
+       | • Add the note or little postcard, which <b>includes the name of the person</b> for whom the present is
        |
-       |🎁 Pick up your gift on **December 20** at the office 319
+       |🎁 Pick up your gift on <b>December 20</b> at the office 319
        |
-       |⏰ If you leave early, you can pick up your gift from office 319 from 9:00 to 18:00 from Monday to Thursday, on Friday until 16:45, **please notify the keepers of gifts (office 319 employees) in advance**
+       |⏰ If you leave early, you can pick up your gift from office 319 from 9:00 to 18:00 from Monday to Thursday, on Friday until 16:45, <b>please notify the keepers of gifts (office 319 employees) in advance</b>
        |""".stripMargin
   }
 

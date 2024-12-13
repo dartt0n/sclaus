@@ -7,12 +7,13 @@ import com.dartt0n.sclaus.dialogs.Dialogs
 import com.dartt0n.sclaus.domain._
 import com.dartt0n.sclaus.domain.languages._
 import com.dartt0n.sclaus.domain.states._
-import com.dartt0n.sclaus.service.ParserService
-import com.dartt0n.sclaus.service.UserRepositoryService
+import com.dartt0n.sclaus.service._
 import telegramium.bots.ChatIntId
+import telegramium.bots.Html
 import telegramium.bots.KeyboardButton
 import telegramium.bots.Message
 import telegramium.bots.ReplyKeyboardMarkup
+import telegramium.bots.ReplyKeyboardRemove
 import telegramium.bots.ReplyParameters
 import telegramium.bots.high._
 import telegramium.bots.high.implicits._
@@ -25,70 +26,80 @@ class TelegramBot[F[_]: Logging.Make](
   parser: ParserService[F],
   currentStage: Stage,
 )(using
-  api: Api[F],
-  asyncF: Async[F],
-  parallel: Parallel[F],
+  api: Api[F],          // required by LongPollBot
+  asyncF: Async[F],     // required by LongPollBot
+  parallel: Parallel[F],// required by LongPollBot
 ) extends LongPollBot[F](api) {
 
   private given logging: Logging[F] = Logging.Make[F].forService[TelegramBot[F]]
+
+  def startupHook(): F[Unit] = (for {
+    _ <- info"startup hook triggered"
+    _ <- asyncF.whenA(currentStage == stages.Preparation) {
+      debug"stage switched to preparation, revealing targets"
+        >> asyncF.unit // todo: send to everyone
+    }
+  } yield ()).handleErrorWith(err => info"startup hook failed: ${err.getMessage()}")
+
+  def shutdownHook(): F[Unit] = (for {
+    _ <- info"shutdown hook triggered"
+  } yield ()).handleErrorWith(err => info"shutdown hook failed: ${err.getMessage()}")
 
   override def onMessage(msg: Message): F[Unit] = {
     (for {
       _ <- debug"received message in chat ${msg.chat.id}"
 
-      // Try obtain message author, skip if it is unknown
-      telegramUser <- msg.from.fold {
-        debug"message author is not specified"
-          *> asyncF.raiseError(Exception("message author is not specified"))
-      } { user =>
-        debug"message from user ${user.id}"
-          *> user.pure
-      }
+      telegramUser <- // Try obtain message author, skip if it is unknown
+        msg.from.fold(asyncF.raiseError(Exception("message author is not specified")))(_.pure)
 
-      // Skip if the author is a bot
-      _ <- asyncF.whenA(telegramUser.isBot)(
-        debug"ignoring message from bot"
-          *> asyncF.raiseError(Exception("bot is not allowed to use this bot")),
-      )
+      _ <- // Skip if the author is a bot
+        asyncF.raiseWhen(telegramUser.isBot)(Exception("bot is not allowed to use this bot"))
 
-      // Extract language and build a dialog system
-      _ <- debug"user language is ${telegramUser.languageCode.getOrElse("unknown")}"
+      _ <- // Extract language and build a dialog system
+        debug"user language is ${telegramUser.languageCode.getOrElse("unknown")}"
       language = telegramUser.languageCode.flatMap(languages.fromIETF).getOrElse(ENG)
       dialog   = Dialogs.fromLanguage(language)
 
-      // Skip if message is not in private chat, while sending warning message
-      _ <- asyncF.whenA(msg.chat.`type` != "private") {
-        onGroupMessage(msg, dialog)
-      }
+      _ <- // Skip if message is not in private chat, while sending warning message
+        asyncF.whenA(msg.chat.`type` != "private") {
+          onGroupMessage(msg, dialog)
+        }
 
-      // Handle /start command
-      _ <- asyncF.whenA(msg.text.getOrElse("").toLowerCase().startsWith("/start")) {
-        onStartCommand(msg, telegramUser, language, dialog)
-      }
-
-      user <- repo.read(UserID(telegramUser.id)).getOrElseF(asyncF.raiseError(Exception("user not found")))
-
-      // Handle greetings reply
-      _ <- asyncF.whenA(msg.text.getOrElse("") == dialog.greetingReplyButton() && user.state == states.READY) {
-        onGreetingReply(msg, user, dialog)
-      }
-
-      // Handle rules reply
-      _ <- asyncF.whenA(msg.text.getOrElse("") == dialog.rulesReplyButton() && user.state == states.GREETING_ANSWERED) {
-        onRulesReply(msg, user, dialog)
-      }
-
-      // Handle timeline reply
-      _ <- asyncF.whenA(msg.text.getOrElse("") == dialog.timelineReplyButton() && user.state == states.RULES_ANSWERED) {
-        onTimelineReply(msg, user, dialog)
-      }
-
-      // Handle preferences reply
-      _ <- asyncF.whenA(user.state == states.TIMELINE_ANSWERED) {
-        onPreferencesReply(msg, user, dialog)
+      _ <- msg.text.getOrElse("").toLowerCase().startsWith("/start") match {
+        case true => onStartCommand(msg, telegramUser, language, dialog)
+        case false =>
+          repo
+            .read(UserID(telegramUser.id))
+            .getOrElseF(asyncF.raiseError(Exception("user not found")))
+            .flatMap(user => stateMatch(msg, user, dialog))
       }
 
     } yield ()).handleErrorWith(err => info"error while processing message: ${err.getMessage()}")
+  }
+
+  private def stateMatch(msg: Message, user: User, dialog: Dialogs): F[Unit] = {
+    debug"processing ${user.state.getClass.getName}, ${msg.text}"
+      >> (user.state match {
+        case states.READY if msg.text.getOrElse("") == dialog.greetingReplyButton() =>
+          onGreetingReply(msg, user, dialog)
+
+        case states.GREETING_ANSWERED if msg.text.getOrElse("") == dialog.rulesReplyButton() =>
+          onRulesReply(msg, user, dialog)
+
+        case states.RULES_ANSWERED if msg.text.getOrElse("") == dialog.timelineReplyButton() =>
+          onTimelineReply(msg, user, dialog)
+
+        case states.TIMELINE_ANSWERED =>
+          onPreferencesReply(msg, user, dialog)
+
+        case states.PREFERENCES_ANSWERED if msg.text.getOrElse("") == dialog.prefButtonOk() =>
+          onPreferencesReplyOk(msg, user, dialog)
+
+        case states.PREFERENCES_ANSWERED if msg.text.getOrElse("") == dialog.prefButtonErr() =>
+          onPreferencesReplyErr(msg, user, dialog)
+
+        case _ => asyncF.raiseError(Exception("unprocessed state"))
+      })
   }
 
   private def onGroupMessage(msg: Message, dialog: Dialogs): F[Unit] =
@@ -96,6 +107,7 @@ class TelegramBot[F[_]: Logging.Make](
       >> sendMessage(
         ChatIntId(msg.chat.id),
         dialog.onlyPrivateChatsAllowed(),
+        parseMode = Some(Html),
         replyParameters = Some(ReplyParameters(messageId = msg.messageId)),
       ).exec.void
       >> asyncF.raiseError(Exception("this bot can only be used in private chats"))
@@ -108,7 +120,7 @@ class TelegramBot[F[_]: Logging.Make](
   ): F[Unit] = for {
     _ <- asyncF.unlessA(currentStage == stages.Registration) {
       debug"registration is closed, denying request with message"
-        >> sendMessage(ChatIntId(msg.chat.id), dialog.registrationIsClosed()).exec.void
+        >> sendMessage(ChatIntId(msg.chat.id), dialog.registrationIsClosed(), parseMode = Some(Html)).exec.void
         >> asyncF.raiseError(Exception("registration is closed"))
     }
 
@@ -135,9 +147,10 @@ class TelegramBot[F[_]: Logging.Make](
     _ <- sendMessage(
       ChatIntId(msg.chat.id),
       dialog.greeting(user),
+      parseMode = Some(Html),
       replyMarkup = Some(
         ReplyKeyboardMarkup(
-          isPersistent = Some(true),
+          isPersistent = Some(false),
           keyboard = List(List(KeyboardButton(dialog.greetingReplyButton()))),
         ),
       ),
@@ -152,6 +165,7 @@ class TelegramBot[F[_]: Logging.Make](
     _ <- sendMessage(
       ChatIntId(msg.chat.id),
       dialog.rules(),
+      parseMode = Some(Html),
       replyMarkup = Some(
         ReplyKeyboardMarkup(
           isPersistent = Some(true),
@@ -170,6 +184,7 @@ class TelegramBot[F[_]: Logging.Make](
     _ <- sendMessage(
       ChatIntId(msg.chat.id),
       dialog.timeline(),
+      parseMode = Some(Html),
       replyMarkup = Some(
         ReplyKeyboardMarkup(
           isPersistent = Some(true),
@@ -182,13 +197,14 @@ class TelegramBot[F[_]: Logging.Make](
 
   private def onTimelineReply(msg: Message, user: User, dialog: Dialogs): F[Unit] = for {
     user <- repo
-      .update(UpdateUser(user.id, state = Some(states.RULES_ANSWERED)))
+      .update(UpdateUser(user.id, state = Some(states.TIMELINE_ANSWERED)))
       .getOrElseF(asyncF.raiseError(Exception("user not found")))
 
     _ <- sendMessage(
       ChatIntId(msg.chat.id),
       dialog.askPreferences(),
-      replyMarkup = None,
+      replyMarkup = Some(ReplyKeyboardRemove(true)),
+      parseMode = Some(Html),
     ).exec.void
 
   } yield ()
@@ -199,7 +215,7 @@ class TelegramBot[F[_]: Logging.Make](
         .parse(text)
         .getOrElseF(
           debug"failed to parse users preferences, asking again"
-            >> sendMessage(ChatIntId(msg.chat.id), dialog.failedParsePreferences()).exec.void
+            >> sendMessage(ChatIntId(msg.chat.id), dialog.failedParsePreferences(), parseMode = Some(Html)).exec.void
             >> asyncF.raiseError(Exception("failed to parse")),
         )
     }
@@ -211,17 +227,44 @@ class TelegramBot[F[_]: Logging.Make](
     _ <- sendMessage(
       ChatIntId(msg.chat.id),
       dialog.showPreferences(user),
+      parseMode = Some(Html),
       replyMarkup = Some(
         ReplyKeyboardMarkup(
-          isPersistent = Some(true),
+          isPersistent = Some(false),
           keyboard = List(
-            List(KeyboardButton(dialog.replyPreferencesOK())),
-            List(KeyboardButton(dialog.replyPreferencesErr())),
+            List(KeyboardButton(dialog.prefButtonOk())),
+            List(KeyboardButton(dialog.prefButtonErr())),
           ),
         ),
       ),
     ).exec.void
 
+  } yield ()
+
+  private def onPreferencesReplyOk(msg: Message, user: User, dialog: Dialogs): F[Unit] = for {
+    user <- repo
+      .update(UpdateUser(user.id, state = Some(states.REGISTRATION_COMPLETE)))
+      .getOrElseF(asyncF.raiseError(Exception("user not found")))
+
+    _ <- sendMessage(
+      ChatIntId(msg.chat.id),
+      dialog.registrationComplete(),
+      parseMode = Some(Html),
+      replyMarkup = Some(ReplyKeyboardRemove(true)),
+    ).exec.void
+  } yield ()
+
+  private def onPreferencesReplyErr(msg: Message, user: User, dialog: Dialogs): F[Unit] = for {
+    user <- repo
+      .update(UpdateUser(user.id, state = Some(states.TIMELINE_ANSWERED)))
+      .getOrElseF(asyncF.raiseError(Exception("user not found")))
+
+    _ <- sendMessage(
+      ChatIntId(msg.chat.id),
+      dialog.askPreferences(),
+      replyMarkup = Some(ReplyKeyboardRemove(true)),
+      parseMode = Some(Html),
+    ).exec.void
   } yield ()
 
 }
