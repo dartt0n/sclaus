@@ -20,6 +20,8 @@ trait UserRepositoryService[F[_]] {
   def update(user: UpdateUser): F[Either[UserRepositoryServiceError, User]]
 
   def delete(id: UserID): F[Either[UserRepositoryServiceError, User]]
+
+  def listAll(): F[Either[UserRepositoryServiceError, List[User]]]
 }
 
 trait UserRepositoryServiceError extends AppError
@@ -108,6 +110,23 @@ object UserRepositoryService {
               >> value.asRight.pure
         }
     }
+
+    override def listAll(): F[Either[UserRepositoryServiceError, List[User]]] =
+      debug"listing all users"
+        >> functionK(repo.listAll()).attempt.flatMap {
+          case Left(error) =>
+            errorCause"list all users failed with unexpected error" (error)
+              >> UserRepositoryServiceError.UnexpectedError(error).asLeft.pure
+
+          case Right(Left(error)) =>
+            error"list all users failed with expected error"
+              >> UserRepositoryServiceError.RepositoryError(error).asLeft.pure
+
+          case Right(Right(value)) =>
+            debug"list all users successfully finished"
+              >> value.asRight.pure
+
+        }
 
   }
 

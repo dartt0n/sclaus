@@ -22,7 +22,9 @@ CREATE TABLE users
     "language" languages,
     "preferences" TEXT[],
     "state" states,
-    CONSTRAINT users_pkey PRIMARY KEY ("id")
+    "target" BIGINT,
+    CONSTRAINT users_pkey PRIMARY KEY ("id"),
+    CONSTRAINT fk_target FOREIGN KEY ("target") REFERENCES users("id")
 );
 
 CREATE INDEX users_deletedAt_idx ON users ("deletedAt") WHERE "deletedAt" IS NOT NULL;

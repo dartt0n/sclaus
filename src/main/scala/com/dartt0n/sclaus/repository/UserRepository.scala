@@ -16,6 +16,7 @@ trait UserRepository[F[_]] {
 
   def delete(id: UserID): F[Either[UserRepositoryError.Delete, User]]
 
+  def listAll(): F[Either[UserRepositoryError.Read, List[User]]]
 }
 
 /** Errors related to UserRepository */

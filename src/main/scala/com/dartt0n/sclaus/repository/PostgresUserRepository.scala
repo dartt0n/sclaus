@@ -4,7 +4,9 @@ import cats.syntax.all._
 import com.dartt0n.sclaus.domain._
 import com.dartt0n.sclaus.domain.languages._
 import com.dartt0n.sclaus.domain.states._
+import com.dartt0n.sclaus.repository.UserRepositoryError.Read
 import doobie._
+import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.implicits.javasql._
 import doobie.postgres.implicits._
@@ -54,6 +56,9 @@ private final class PostgresUserRepository extends UserRepository[ConnectionIO] 
       case Some(value) => value.asRight.pure
       case None        => UserRepositoryError.Delete.NotFound.asLeft.pure
     }
+
+  override def listAll(): ConnectionIO[Either[Read, List[User]]] =
+    listAllQuery().to[List].map(_.pure)
 
 }
 
@@ -107,10 +112,10 @@ object PostgresUserRepository {
     sql"""
         INSERT INTO users (
          "id", "createdAt", "updatedAt", "deletedAt", "firstName",
-         "lastName", "username", "language", "preferences", "state"
+         "lastName", "username", "language", "preferences", "state", "target"
         ) VALUES (
             ${user.id}, ${DateTime.now()}, ${DateTime.now()}, ${Option.empty[DateTime]}, ${user.firstName},
-            ${user.lastName}, ${user.username}, ${user.language}, ${user.preferences}, ${user.state}
+            ${user.lastName}, ${user.username}, ${user.language}, ${user.preferences}, ${user.state}, ${user.target}
         ) RETURNING *;
       """.query[User]
   }
@@ -142,11 +147,18 @@ object PostgresUserRepository {
         ++ user.language.fold(fr"")(update => fr""", "language"=$update""")
         ++ user.preferences.fold(fr"")(update => fr""", "preferences"=$update""")
         ++ user.state.fold(fr"")(update => fr""", "state"=$update""")
+        ++ user.target.fold(fr"")(update => fr""", "target"=$update""")
         ++ fr"""
             WHERE "id"=${user.id} AND "deletedAt" IS NULL
             RETURNING *;
           """
     ).query[User]
   }
+
+  def listAllQuery(): Query0[User] =
+    sql"""
+        SELECT * FROM users
+        WHERE "deletedAt" IS NULL;
+      """.query[User]
 
 }

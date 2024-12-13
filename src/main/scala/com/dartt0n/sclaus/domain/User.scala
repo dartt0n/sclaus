@@ -60,6 +60,7 @@ final case class User(
   //
   preferences: List[String],
   state: State,
+  target: Option[UserID],
 )
 
 final case class CreateUser(
@@ -72,6 +73,7 @@ final case class CreateUser(
   //
   preferences: List[String],
   state: State,
+  target: Option[UserID],
 )
 
 final case class UpdateUser(
@@ -84,4 +86,5 @@ final case class UpdateUser(
   //
   preferences: Option[List[String]] = None,
   state: Option[State] = None,
+  target: Option[Option[UserID]] = None,
 )

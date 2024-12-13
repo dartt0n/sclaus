@@ -19,6 +19,7 @@ import telegramium.bots.high._
 import telegramium.bots.high.implicits._
 import tofu.logging.Logging
 import tofu.syntax.feither._
+import tofu.syntax.foption._
 import tofu.syntax.logging._
 
 class TelegramBot[F[_]: Logging.Make](
@@ -37,7 +38,20 @@ class TelegramBot[F[_]: Logging.Make](
     _ <- info"startup hook triggered"
     _ <- asyncF.whenA(currentStage == stages.Preparation) {
       debug"stage switched to preparation, revealing targets"
-        >> asyncF.unit // todo: send to everyone
+        >> repo.listAll().flatMap {
+          case Left(error) =>
+            asyncF.raiseError(Exception("failed to retrieve users from database"))
+          case Right(users) =>
+            users.parTraverseFilter { u =>
+              val dialog = Dialogs.fromLanguage(u.language)
+              u.target.pure.flatMapF { id =>
+                repo.read(id).flatMap {
+                  case Left(value)  => None.pure
+                  case Right(value) => sendMessage(ChatIntId(u.id.toLong), dialog.revealTarget(value)).exec.as(Some(()))
+                }
+              }
+            }
+        }
     }
   } yield ()).handleErrorWith(err => info"startup hook failed: ${err.getMessage()}")
 
@@ -136,6 +150,7 @@ class TelegramBot[F[_]: Logging.Make](
               language = language,
               preferences = List.empty,
               state = READY,
+              target = None,
             ),
           )
           .foldF(
