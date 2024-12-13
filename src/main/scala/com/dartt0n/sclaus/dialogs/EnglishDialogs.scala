@@ -79,6 +79,9 @@ object EnglishDialogs extends Dialogs {
        |${user.preferences.map("•" + _).mkString("\n")}
        |""".stripMargin
 
+  def replyPreferencesOK(): String  = "Everything is right"
+  def replyPreferencesErr(): String = "No, there is a mistake, let's try again"
+
   def revealTarget(target: User): String = {
     s"""💥 Moment of truth!
        |
@@ -122,6 +125,10 @@ object EnglishDialogs extends Dialogs {
 
   def registrationIsClosed(): String =
     s"""🫢 Ooops, sorry, registration is already closed...
+       |""".stripMargin
+
+  def failedParsePreferences(): String =
+    s"""🤒 Ouch, sorry, I can't understand that... Maybe you could rewrite it using a bullet point list?
        |""".stripMargin
 
 }

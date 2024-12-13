@@ -4,8 +4,10 @@ import cats.~>
 import cats.effect.ExitCode
 import cats.effect.IO
 import cats.effect.IOApp
+import com.dartt0n.sclaus.parser.StaticPreferenceParser
 import com.dartt0n.sclaus.repository.PostgresUserRepository
-import com.dartt0n.sclaus.service.UserStorage
+import com.dartt0n.sclaus.service.ParserService
+import com.dartt0n.sclaus.service.UserRepositoryService
 import doobie.free.connection.ConnectionIO
 import doobie.util.log.LogEvent
 import doobie.util.log.LogHandler
@@ -45,11 +47,19 @@ object Main extends IOApp {
           password = config.database.password,
           logHandler = Some(databaseLogger),
         )
-        val repository = PostgresUserRepository.make
-        val storage    = UserStorage.make(repository, funcK(transactor))
+        val postgresRepo = PostgresUserRepository.make
+        val repo         = UserRepositoryService.make(postgresRepo, funcK(transactor))
+
+        val staticParser = StaticPreferenceParser.make
+        val parser = ParserService.make(
+          staticParser,
+          new ~>[IO, IO] {
+            def apply[A](fa: IO[A]): IO[A] = fa
+          },
+        )
 
         given api: Api[IO] = BotApi(http = http, baseUrl = s"https://api.telegram.org/bot${config.telegram.token}")
-        val bot            = TelegramBot(storage, config.event.stage)
+        val bot            = TelegramBot(repo, parser, config.event.stage)
 
         bot.start()
       }

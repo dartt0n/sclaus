@@ -36,6 +36,9 @@ object RussianDialogs extends Dialogs {
     // todo: translate english
     s""""""
 
+  def replyPreferencesOK(): String  = ""
+  def replyPreferencesErr(): String = ""
+
   def revealTarget(target: User): String =
     // todo: translate englush
     s"""
@@ -60,6 +63,11 @@ object RussianDialogs extends Dialogs {
        |""".stripMargin
 
   def registrationIsClosed(): String =
+    s"""
+       |""".stripMargin
+
+  def failedParsePreferences(): String =
+    // todo:
     s"""
        |""".stripMargin
 
