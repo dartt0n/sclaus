@@ -12,7 +12,7 @@ object Dependencies {
     "io.circe"                   %% "circe-parser"          % "0.14.10",
     "io.circe"                   %% "circe-config"          % "0.10.1",
     "org.tpolecat"               %% "doobie-core"           % "1.0.0-RC5",
-    "org.tpolecat"               %% "doobie-hikari"         % "1.0.0-RC5",
+    "org.tpolecat"               %% "doobie-hikari"         % "1.0.0-RC5" % "provided",
     "org.tpolecat"               %% "doobie-postgres"       % "1.0.0-RC5",
     "tf.tofu"                    %% "tofu-logging-log4cats" % "0.13.6",
     "tf.tofu"                    %% "tofu-core-ce3"         % "0.13.6",

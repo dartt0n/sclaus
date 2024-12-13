@@ -14,6 +14,9 @@
 Name `sclaus` comes from [Santa Claus](https://en.wikipedia.org/wiki/Santa_Claus) shorted to SClaus.
 Also it is sounds phonetically close to Scala language, in which this project is written.
 
+## Demo
+![GIF](./assets/sclaus.gif)
+
 ## Development
 ### Prerequisites
 Before you start, make sure you have the following tools installed on your machine:
@@ -51,6 +54,11 @@ Create file `application.conf`, which describes application configuration in HOC
 Take look at [example.application.conf](./src/main/resources/example.application.conf) to
 understand what to put into config.file
 
+> [!NOTE]
+> 1. Use address `postgres:5432` for database url when launching both app and postgres in docker.
+> 2. Use address `localhost:32004` for database url when launching app on the host and database in docker.
+
+
 ### Launch application
 To launch the application, run the following command:
 ```shell
@@ -87,14 +95,26 @@ PG_PASSWORD="<secure-password>"
 PGADMIN_USERNAME="someuser"
 PGADMIN_PASSWORD="<secure-password>"
 ```
-#### Step 2: Start the Project
+
+#### Step 2: Obtain Telegram Token
+Navigate to [Bot Father](https://t.me/BotFather) and create new bot. Save the token for later use. Learn more about Telegram Bots at [official documentation](https://core.telegram.org/bots).
+
+#### Step 3: Create a `application.conf` File
+Create file `application.conf`, which describes application configuration in HOCON format.
+Take look at [example.application.conf](./src/main/resources/example.application.conf) to
+understand what to put into config.file. File should be placed in `src/main/resources` directory.
+
+> [!NOTE]
+> Use address `postgres:5432` for database url when launching both app and postgres in docker.
+
+#### Step 4: Start the Project
 Open your terminal and navigate to the project directory. Run the following command to build and start the project:
 ```shell
 docker compose up --build --detach
 ```
 This command will build the Docker images and start the services in detached mode.
 
-#### Step 3: Access the Services
+#### Step 5: Access the Services
 After starting the project, you can access the following services at the specified ports:
 
 | service          | exposed port    |
@@ -102,6 +122,9 @@ After starting the project, you can access the following services at the specifi
 | sclaus-postgres  | 127.0.0.1:32004 |
 | sclaus-pgadmin   | 127.0.0.1:32005 |
 | sclaus-server    | 127.0.0.1:32006 |
+
+#### Step 6: Explore!
+Find your bot on telegram and use it!
 
 #### Futher Steps
 > [!IMPORTANT]
@@ -118,6 +141,9 @@ For the past three years (since 2022), [@dartt0n](https://t.me/dartt0n) (yes, it
 
 ## Future Plans
 - [ ] Build native images and minimal docker images using GraalVM
+- [ ] Use LLM to generate response messages
+- [ ] Create FSM based on indexed monads
+- [ ] Introduce message brokers for scalability
 
 ## License
 `sclaus` is free and open-source under [MIT License](https://choosealicense.com/licenses/mit/).
