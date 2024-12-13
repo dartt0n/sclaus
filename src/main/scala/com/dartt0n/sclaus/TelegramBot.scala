@@ -55,7 +55,7 @@ class TelegramBot[F[_]: Logging.Make](
       dialog   = Dialogs.fromLanguage(language)
 
       // Skip if message is not in private chat, while sending warning message
-      _ <- asyncF.whenA(msg.chat.`type` != "private")(
+      _ <- asyncF.whenA(msg.chat.`type` != "private") {
         debug"ignoring message from non-private chat"
           *> sendMessage(
             ChatIntId(msg.chat.id),
@@ -63,45 +63,52 @@ class TelegramBot[F[_]: Logging.Make](
             replyParameters = Some(ReplyParameters(messageId = msg.messageId)),
           ).exec.void
           >> asyncF.raiseError(Exception("this bot can only be used in private chats")),
-      )
+      }
 
       // Handle /start command
-      _ <- msg.text
-        .filter(_.toLowerCase().startsWith("/start"))
-        .fold(().pure) { _ =>
+      _ <- asyncF
+        .whenA(msg.text.getOrElse("").toLowerCase().startsWith("/start")) {
           debug"received /start command"
-            *> onStartCommand(msg, telegramUser, language, dialog)
-            <* debug"successfully processed /start command"
+            >> onStartCommand(msg, telegramUser, language, dialog)
+            >> debug"successfully processed /start command"
         }
         .handleErrorWith(err => error"error while processing /start command: ${err.getMessage()}")
 
-      // Handle greeting reply
-      _ <- msg.text
-        .filter(_ == dialog.greetingReplyButton())
-        .fold(().pure) { _ =>
+      user <- storage.read(UserID(telegramUser.id)).getOrElseF(asyncF.raiseError(Exception("user not found")))
+
+      // Handle greetings reply
+      _ <- asyncF
+        .whenA(msg.text.getOrElse("") == dialog.greetingReplyButton() && user.state == states.READY) {
           debug"received answer to greeing message"
-            *> onGreetingReply(msg, telegramUser, dialog)
-            <* debug"successfully processed answer to greeting message"
+            >> onGreetingReply(msg, user, dialog)
+            >> debug"successfully processed answer to greeting message"
         }
         .handleErrorWith(err => error"error while processing reply to greeting message: ${err.getMessage()}")
 
       // Handle rules reply
-      _ <- msg.text
-        .filter(_ == dialog.rulesReplyButton())
-        .fold(().pure) { _ =>
+      _ <- asyncF
+        .whenA(msg.text.getOrElse("") == dialog.rulesReplyButton() && user.state == states.GREETING_ANSWERED) {
           debug"received answer to rules message"
-            *> onRulesReply(msg, telegramUser, dialog)
-            <* debug"successfully processed answer to rules message"
+            >> onRulesReply(msg, user, dialog)
+            >> debug"successfully processed answer to rules message"
         }
         .handleErrorWith(err => error"error while processing reply to rules message: ${err.getMessage()}")
 
       // Handle timeline reply
-      _ <- msg.text
-        .filter(_ == dialog.timelineReplyButton())
-        .fold(().pure) { _ =>
+      _ <- asyncF
+        .whenA(msg.text.getOrElse("") == dialog.timelineReplyButton() && user.state == states.RULES_ANSWERED) {
           debug"received answer to timeline message"
-            *> onTimelineReply(msg, telegramUser, dialog)
-            <* debug"successfully processed answer to timeline message"
+            >> onTimelineReply(msg, user, dialog)
+            >> debug"successfully processed answer to timeline message"
+        }
+        .handleErrorWith(err => error"error while processing reply to timeline message: ${err.getMessage()}")
+
+      // Handle preferences reply
+      _ <- asyncF
+        .whenA(user.state == states.TIMELINE_ANSWERED) {
+          debug"received answer to preferences message"
+            >> onPreferencesReply(msg, user, dialog)
+            >> debug"successfully processed answer to preferences message"
         }
         .handleErrorWith(err => error"error while processing reply to timeline message: ${err.getMessage()}")
 
@@ -113,142 +120,96 @@ class TelegramBot[F[_]: Logging.Make](
     telegramUser: telegramium.bots.User,
     language: Language,
     dialog: Dialogs,
-  ): F[Unit] = {
-    for {
-      _ <- asyncF.unlessA(currentStage == stages.Registration) {
-        debug"registration is closed, denying request with message"
-          *> sendMessage(ChatIntId(msg.chat.id), dialog.registrationIsClosed()).exec.void
-          >> asyncF.raiseError(Exception("registration is closed"))
+  ): F[Unit] = for {
+    _ <- asyncF.unlessA(currentStage == stages.Registration) {
+      debug"registration is closed, denying request with message"
+        >> sendMessage(ChatIntId(msg.chat.id), dialog.registrationIsClosed()).exec.void
+        >> asyncF.raiseError(Exception("registration is closed"))
+    }
+
+    user <- debug"reading user ${telegramUser.id} from storage"
+      >> storage.read(UserID(telegramUser.id)).getOrElseF {
+        storage
+          .create(
+            CreateUser(
+              id = UserID(telegramUser.id),
+              firstName = Some(telegramUser.firstName),
+              lastName = telegramUser.lastName,
+              username = telegramUser.username,
+              language = language,
+              preferences = List.empty,
+              state = READY,
+            ),
+          )
+          .foldF(
+            err => asyncF.raiseError(Exception("user creation failed")),
+            user => user.pure,
+          )
       }
 
-      user <- debug"reading user ${telegramUser.id} from storage"
-        *> storage.read(UserID(telegramUser.id)).getOrElseF {
-          storage
-            .create(
-              CreateUser(
-                id = UserID(telegramUser.id),
-                firstName = Some(telegramUser.firstName),
-                lastName = telegramUser.lastName,
-                username = telegramUser.username,
-                language = language,
-                preferences = List.empty,
-                state = READY,
-              ),
-            )
-            .foldF(
-              err => asyncF.raiseError(Exception("unknown user")),
-              user => user.pure,
-            )
-        }
-
-      _ <- sendMessage(
-        ChatIntId(msg.chat.id),
-        dialog.greeting(user),
-        replyMarkup = Some(
-          ReplyKeyboardMarkup(
-            isPersistent = Some(true),
-            keyboard = List(List(KeyboardButton(dialog.greetingReplyButton()))),
-          ),
+    _ <- sendMessage(
+      ChatIntId(msg.chat.id),
+      dialog.greeting(user),
+      replyMarkup = Some(
+        ReplyKeyboardMarkup(
+          isPersistent = Some(true),
+          keyboard = List(List(KeyboardButton(dialog.greetingReplyButton()))),
         ),
-      ).exec.void
-    } yield ()
-  }
+      ),
+    ).exec.void
+  } yield ()
 
-  private def onGreetingReply(
-    msg: Message,
-    telegramUser: telegramium.bots.User,
-    dialog: Dialogs,
-  ): F[Unit] = {
-    for {
-      user <- debug"reading user ${telegramUser.id} from storage"
-        *> storage.read(UserID(telegramUser.id)).flatMap {
-          case Left(err)   => asyncF.raiseError(Exception("user not found"))
-          case Right(user) => user.pure
-        }
+  private def onGreetingReply(msg: Message, user: User, dialog: Dialogs): F[Unit] = for {
+    user <- storage
+      .update(UpdateUser(user.id, state = Some(states.GREETING_ANSWERED)))
+      .getOrElseF(asyncF.raiseError(Exception("update failed")))
 
-      _ <- asyncF.raiseUnless(user.state == states.READY)(Exception("invalid state, skipping"))
-
-      user <- debug"updating user ${telegramUser.id} state"
-        *> storage.update(UpdateUser(user.id, state = Some(states.GREETING_ANSWERED))).flatMap {
-          case Left(err)   => asyncF.raiseError(Exception("user not found"))
-          case Right(user) => user.pure
-        }
-
-      _ <- sendMessage(
-        ChatIntId(msg.chat.id),
-        dialog.rules(),
-        replyMarkup = Some(
-          ReplyKeyboardMarkup(
-            isPersistent = Some(true),
-            keyboard = List(List(KeyboardButton(dialog.rulesReplyButton()))),
-          ),
+    _ <- sendMessage(
+      ChatIntId(msg.chat.id),
+      dialog.rules(),
+      replyMarkup = Some(
+        ReplyKeyboardMarkup(
+          isPersistent = Some(true),
+          keyboard = List(List(KeyboardButton(dialog.rulesReplyButton()))),
         ),
-      ).exec.void
+      ),
+    ).exec.void
 
-    } yield ()
-  }
+  } yield ()
 
-  private def onRulesReply(
-    msg: Message,
-    telegramUser: telegramium.bots.User,
-    dialog: Dialogs,
-  ): F[Unit] = {
-    for {
-      user <- debug"reading user ${telegramUser.id} from storage"
-        *> storage.read(UserID(telegramUser.id)).flatMap {
-          case Left(err)   => asyncF.raiseError(Exception("user not found"))
-          case Right(user) => user.pure
-        }
+  private def onRulesReply(msg: Message, user: User, dialog: Dialogs): F[Unit] = for {
+    user <- storage
+      .update(UpdateUser(user.id, state = Some(states.RULES_ANSWERED)))
+      .getOrElseF(asyncF.raiseError(Exception("user not found")))
 
-      _ <- asyncF.raiseUnless(user.state == states.GREETING_ANSWERED)(Exception("invalid state, skipping"))
-
-      user <- debug"updating user ${telegramUser.id} state"
-        *> storage.update(UpdateUser(user.id, state = Some(states.RULES_ANSWERED))).flatMap {
-          case Left(err)   => asyncF.raiseError(Exception("user not found"))
-          case Right(user) => user.pure
-        }
-
-      _ <- sendMessage(
-        ChatIntId(msg.chat.id),
-        dialog.timeline(),
-        replyMarkup = Some(
-          ReplyKeyboardMarkup(
-            isPersistent = Some(true),
-            keyboard = List(List(KeyboardButton(dialog.timelineReplyButton()))),
-          ),
+    _ <- sendMessage(
+      ChatIntId(msg.chat.id),
+      dialog.timeline(),
+      replyMarkup = Some(
+        ReplyKeyboardMarkup(
+          isPersistent = Some(true),
+          keyboard = List(List(KeyboardButton(dialog.timelineReplyButton()))),
         ),
-      ).exec.void
+      ),
+    ).exec.void
 
-    } yield ()
-  }
+  } yield ()
 
-  private def onTimelineReply(
-    msg: Message,
-    telegramUser: telegramium.bots.User,
-    dialog: Dialogs,
-  ): F[Unit] = {
-    for {
-      user <- debug"reading user ${telegramUser.id} from storage"
-        *> storage.read(UserID(telegramUser.id)).flatMap {
-          case Left(err)   => asyncF.raiseError(Exception("user not found"))
-          case Right(user) => user.pure
-        }
+  private def onTimelineReply(msg: Message, user: User, dialog: Dialogs): F[Unit] = for {
+    user <- storage
+      .update(UpdateUser(user.id, state = Some(states.RULES_ANSWERED)))
+      .getOrElseF(asyncF.raiseError(Exception("user not found")))
 
-      _ <- asyncF.raiseUnless(user.state == states.RULES_ANSWERED)(Exception("invalid state, skipping"))
+    _ <- sendMessage(
+      ChatIntId(msg.chat.id),
+      dialog.askPreferences(),
+      replyMarkup = None,
+    ).exec.void
 
-      user <- debug"updating user ${telegramUser.id} state"
-        *> storage.update(UpdateUser(user.id, state = Some(states.TIMELINE_ANSWERED))).flatMap {
-          case Left(err)   => asyncF.raiseError(Exception("user not found"))
-          case Right(user) => user.pure
-        }
+  } yield ()
 
-      _ <- sendMessage(
-        ChatIntId(msg.chat.id),
-        dialog.askPreferences(),
-        replyMarkup = None,
-      ).exec.void
-
-    } yield ()
-  }
+  private def onPreferencesReply(msg: Message, user: User, dialog: Dialogs): F[Unit] = for {
+    _ <- ().pure
+  } yield ()
 
 }
